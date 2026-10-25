@@ -1,6 +1,4 @@
-from pathlib import Path
-
-html = r'''<!doctype html>
+<!doctype html>
 <!-- dev.html: página fuente. Aquí se edita; index.html lo genera tools/build.js. -->
 <html lang="es">
 <head>
@@ -734,9 +732,6 @@ html = r'''<!doctype html>
 <!-- juego -->
 <script defer src="js/game.js"></script>
 <script defer src="js/main.js"></script>
+<!-- scripts:end -->
 </body>
 </html>
-'''
-path = Path("/mnt/data/dev.html")
-path.write_text(html, encoding="utf-8")
-print(f"Creado: {path} ({len(html):,} caracteres)")

@@ -1,4 +1,7 @@
-/* ============ audio.js — sintetizador, secuenciador y efectos de sonido ============
+from pathlib import Path
+
+p = Path("/mnt/data/core_audio.js")
+p.write_text("""/* ============ audio.js — sintetizador, secuenciador y efectos de sonido ============
  * Todo el sonido se genera en el momento con Web Audio: no hay ficheros.
  *
  *   G.Audio.music('village')   cambia de tema con fundido (ver data/music.js)
@@ -34,15 +37,17 @@ G.Audio = (() => {
     musicBus.connect(master); sfxBus.connect(master);
 
     // Reverb: respuesta al impulso generada (ruido que se apaga en 1,8 s).
-    // Se rellena un momento después, a trozos: hacerlo de golpe bloqueaba la
-    // carga de la página (~75 ms). Hasta entonces la música suena sin eco.
+    // Se rellena a trozos para evitar bloquear la carga.
     reverb = ctx.createConvolver();
     const len = Math.floor(ctx.sampleRate * 1.8);
     const ir = ctx.createBuffer(2, len, ctx.sampleRate);
     let ch = 0;
     const fill = () => {
       const d = ir.getChannelData(ch);
-      for (let i = 0; i < len; i++) { const g = 1 - i / len; d[i] = (Math.random() * 2 - 1) * g * g * Math.sqrt(g); }
+      for (let i = 0; i < len; i++) {
+        const g = 1 - i / len;
+        d[i] = (Math.random() * 2 - 1) * g * g * Math.sqrt(g);
+      }
       if (++ch < 2) setTimeout(fill, 30); else reverb.buffer = ir;
     };
     setTimeout(fill, 300);
@@ -59,19 +64,15 @@ G.Audio = (() => {
 
   function unlock() {
     if (!init()) return;
-    // 'suspended' o 'interrupted' (iPhone al volver de otra app): se reanuda.
     if (ctx.state !== 'running') ctx.resume().catch(() => {});
     if (wanted && !current) startSong(wanted);
   }
-  // En móvil, tocar la pantalla (pointerdown) no cuenta como gesto para el
-  // sonido: sí levantar el dedo (pointerup / touchend). Se escuchan todos.
   for (const ev of ['pointerdown', 'pointerup', 'touchend', 'keydown']) addEventListener(ev, unlock, { capture: true });
 
   function applyVolumes() {
     if (!ctx) return;
     const t = ctx.currentTime;
     musicBus.gain.setTargetAtTime(settings.muted ? 0 : settings.music * 0.7, t, 0.05);
-    // Los efectos se generan bajitos: ×2,4 los pone a la par de la música (medido).
     sfxBus.gain.setTargetAtTime(settings.muted ? 0 : settings.sfx * 2.4, t, 0.05);
   }
 
@@ -128,13 +129,11 @@ G.Audio = (() => {
       const o1 = osc('triangle', f, t, t + d + 0.3, g);
       const g2 = ctx.createGain(); g2.gain.value = 0.18; g2.connect(g);
       const o2 = osc('sine', f * 2, t, t + d + 0.3, g2);
-      // Vibrato que entra poco a poco, como un flautista.
       const lfo = ctx.createOscillator(); lfo.frequency.value = 5.3;
       const lg = ctx.createGain(); lg.gain.setValueAtTime(0, t);
       lg.gain.linearRampToValueAtTime(f * 0.007, t + Math.min(0.35, d));
       lfo.connect(lg); lg.connect(o1.frequency); lg.connect(o2.frequency);
       lfo.start(t); lfo.stop(t + d + 0.35);
-      // Soplo al atacar la nota.
       const bp = filt('bandpass', f * 2.2, 2, g);
       const ng = ctx.createGain(); ng.gain.setValueAtTime(0.25, t); ng.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
       ng.connect(bp); noise(t, 0.09, ng);
@@ -221,14 +220,14 @@ G.Audio = (() => {
 
   const NOTE = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
   function midiOf(name) {
-    const m = /^([A-G])(#|b)?(-?\d)$/.exec(name);
+    const m = /^([A-G])(#|b)?(-?\\d)$/.exec(name);
     if (!m) return null;
     return 12 * (+m[3] + 1) + NOTE[m[1]] + (m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0);
   }
 
   /** Acorde "F", "Dm", "C/E", "F#m"... -> { root (0-11), minor, bass (0-11) } */
   function parseChord(c) {
-    const m = /^([A-G])(#|b)?(m?)(?:\/([A-G])(#|b)?)?$/.exec(c);
+    const m = /^([A-G])(#|b)?(m?)(?:\\/([A-G])(#|b)?)?$/.exec(c);
     const pc = (l, a) => (NOTE[l] + (a === '#' ? 1 : a === 'b' ? -1 : 0) + 12) % 12;
     const root = pc(m[1], m[2]);
     return { root, minor: m[3] === 'm', bass: m[4] ? pc(m[4], m[5]) : root };
@@ -237,7 +236,6 @@ G.Audio = (() => {
   /**
    * Compila una canción de data/music.js a una lista de eventos por paso
    * (semicorchea). Melodías: "A4:4 C5:2 -:2" (nota:duración en semicorcheas).
-   * Bajo y arpegios salen de los acordes con patrones de 16 caracteres.
    */
   function compile(song) {
     const bars = song.bars || song.chords.length;
@@ -247,7 +245,7 @@ G.Audio = (() => {
     for (const tr of song.melody || []) {
       tr.bars.forEach((bar, bi) => {
         let s = 0;
-        for (const tok of bar.trim().split(/\s+/)) {
+        for (const tok of bar.trim().split(/\\s+/)) {
           const [n, len] = tok.split(':');
           const L = +len || 1;
           if (n !== '-') {
@@ -280,7 +278,7 @@ G.Audio = (() => {
           else if (c === 'F') midi = base + ch.root + 7;
           else if (c === 'O') midi = base + ch.root + 12;
           else if (c === 'T') midi = base + ch.root + (ch.minor ? 3 : 4);
-          else if (c === 'C') {           // acorde entero (pad)
+          else if (c === 'C') {
             for (let i = 0; i < 3; i++) ev[b * 16 + s].push({ inst: tr.inst, f: midiFreq(chordTone(ch, i, base)), len, v: tr.vel || 1 });
             continue;
           } else midi = chordTone(ch, +c, base);
@@ -324,7 +322,7 @@ G.Audio = (() => {
   function music(name) {
     if (wanted === name) return;
     wanted = name;
-    if (!ctx) return;                    // arrancará al primer clic
+    if (!ctx) return;
     stopCurrent();
     if (name) startSong(name);
   }
@@ -335,7 +333,6 @@ G.Audio = (() => {
     const c = current, sd = 60 / c.song.bpm / 4;
     while (c.next < ctx.currentTime + 0.15) {
       const i = c.step % c.song.steps;
-      // Swing: retrasa las corcheas a contratiempo.
       const t = c.next + (i % 4 === 2 ? c.song.swing * sd : 0);
       for (const e of c.song.ev[i]) {
         if (e.drum) INST[e.inst](t, e.v, c.bus);
@@ -381,7 +378,7 @@ G.Audio = (() => {
 
   const SFX = {
     hover:   () => tone('square', 1400, 1400, 0.025, 0.025),
-    click:   () => { tone('square', 660, 990, 0.05, 0.06); },
+    click:   () => tone('square', 660, 990, 0.05, 0.06),
     back:    () => tone('square', 880, 520, 0.07, 0.05),
     confirm: () => arp('triangle', [784, 988, 1319], 0.05, 0.12, 0.09),
     select:  () => tone('square', 990, 1180, 0.04, 0.045),
@@ -447,11 +444,46 @@ G.Audio = (() => {
     },
     judge:   () => { tone('sine', 1760, 700, 0.45, 0.04); hiss(0.35, 0.07, 'highpass', 1800, 6000); tone('triangle', 120, 50, 0.3, 0.1); },
     pause:   () => arp('square', [784, 523], 0.06, 0.07, 0.04),
-    buy:     () => { SFX.coin(); arp('triangle', [659, 784, 1047], 0.05, 0.12, 0.06); }
+    buy:     () => { SFX.coin(); arp('triangle', [659, 784, 1047], 0.05, 0.12, 0.06); },
+
+    // ---------------- Halloween ----------------
+    // Aparición fantasmal: dos tonos suaves y un descenso espectral.
+    ghost: () => {
+      tone('sine', 660, 880, 0.22, 0.09, 0);
+      tone('sine', 880, 440, 0.42, 0.075, 0.16);
+      hiss(0.35, 0.025, 'bandpass', 1400, 500, 0.08, 1.1);
+    },
+    // Murciélago: pequeños chillidos rápidos y un batir de alas.
+    bat: () => {
+      tone('triangle', 1050, 620, 0.075, 0.075, 0);
+      tone('triangle', 820, 1250, 0.07, 0.06, 0.09);
+      tone('triangle', 1150, 700, 0.08, 0.055, 0.18);
+      hiss(0.18, 0.025, 'highpass', 2200, 6500, 0.02, 0.8);
+    },
+    // Acorde de Halloween: campanas oscuras con un golpe grave.
+    halloween: () => {
+      tone('triangle', 220, 165, 0.55, 0.09, 0);
+      tone('sine', 277, 330, 0.48, 0.065, 0.12);
+      tone('sine', 330, 247, 0.62, 0.065, 0.27);
+      INST.bell(ctx.currentTime + 0.12, 659, 0.35, 0.55, sfxBus);
+      INST.bell(ctx.currentTime + 0.32, 523, 0.45, 0.45, sfxBus);
+      hiss(0.6, 0.035, 'lowpass', 420, 90, 0.04, 1);
+    },
+    // Presencia que acecha: viento filtrado y un descenso de notas.
+    haunt: () => {
+      hiss(0.75, 0.055, 'bandpass', 1800, 260, 0, 0.7);
+      tone('sine', 440, 415, 0.36, 0.07, 0.04);
+      tone('sine', 415, 330, 0.42, 0.065, 0.25);
+      tone('sine', 330, 220, 0.62, 0.075, 0.52);
+    }
   };
 
   // Separación mínima entre repeticiones del mismo efecto (ms).
-  const MIN_GAP = { hit: 45, faint: 60, xp: 35, coin: 50, grass: 70, shot: 70, hover: 40, break: 60, judge: 80 };
+  const MIN_GAP = {
+    hit: 45, faint: 60, xp: 35, coin: 50, grass: 70, shot: 70, hover: 40,
+    break: 60, judge: 80,
+    ghost: 250, bat: 180, halloween: 500, haunt: 350
+  };
 
   function sfx(name, opts) {
     if (!ctx || settings.muted || settings.sfx <= 0 || ctx.state !== 'running') return;
@@ -460,13 +492,13 @@ G.Audio = (() => {
     const now = performance.now();
     const key = name === 'shot' && opts ? 'shot' + opts.kind : name;
     if (now - (last[key] || 0) < (MIN_GAP[name] || 0)) return;
-    if (voices > 24) return;                    // tope de voces simultáneas
+    if (voices > 24) return;
     last[key] = now;
     voices++; setTimeout(() => voices--, 150);
     try { fn(opts); } catch (e) { /* un efecto nunca debe romper el juego */ }
   }
 
-  /** Para pruebas: mide pico y RMS de la salida durante `ms` milisegundos. */
+  /** Para pruebas: mide pico y RMS de la salida durante ms milisegundos. */
   function debugMeter(ms = 2000) {
     if (!ctx) return Promise.resolve(null);
     const an = ctx.createAnalyser();
@@ -487,10 +519,9 @@ G.Audio = (() => {
     });
   }
 
-  /** Para grabar vídeos: la salida final como MediaStream (MediaRecorder). */
   /**
    * Para grabar vídeos: el sonido del juego como MediaStream.
-   * @param solo  sólo a la grabación (deja de sonar por los altavoces)
+   * @param solo sólo a la grabación (deja de sonar por los altavoces)
    */
   function debugStream(solo = false) {
     if (!ctx) return null;
@@ -509,3 +540,5 @@ G.Audio = (() => {
     get track() { return current && current.name; }
   };
 })();
+""", encoding="utf-8")
+print(f"Creado: {p} ({p.stat().st_size} bytes)")

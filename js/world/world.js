@@ -67,14 +67,28 @@ G.World = (() => {
    */
   function arenaSafe(tx, ty) {
     const lx = tx - arena.tx, ly = ty - arena.ty;
+    if (arena.layout === 'glitch') return glitchFloor(lx, ly) && !glitchDoor(lx, ly, arena.dungeon && arena.dungeon.open);
     return (Math.abs(lx) <= 2 && ly >= -6 && ly <= 5) || Math.hypot(lx, ly) < 2.5 ||
            (arena.th.clear > 0 && Math.hypot(lx, ly + 5) < arena.th.clear);
   }
+
+  // Laberinto de la Grieta Glitcheada: entrada, pasillo central, dos salas
+  // de puzles laterales, santuario y cámara del jefe al norte.
+  function glitchFloor(x, y) {
+    const box = (x, y, x1, x2, y1, y2) => x >= x1 && x <= x2 && y >= y1 && y <= y2;
+    return box(x,y,-4,4,8,14) || box(x,y,-2,2,-16,9) ||
+      box(x,y,-12,-5,-5,3) || box(x,y,-5,-2,-2,1) ||
+      box(x,y,5,12,-5,3) || box(x,y,2,5,-2,1) ||
+      box(x,y,-5,5,-16,-10) || box(x,y,-5,5,-25,-18) ||
+      box(x,y,-2,2,-18,-16);
+  }
+  function glitchDoor(x, y, open) { return !open && x >= -2 && x <= 2 && y === -18; }
 
   function terrainRaw(tx, ty) {
     const ad = arenaDist(tx, ty);
     if (ad < arena_outer()) {
       if (ad >= arena.r) return WALL;
+      if (arena.layout === 'glitch') return glitchFloor(tx - arena.tx, ty - arena.ty) && !glitchDoor(tx - arena.tx, ty - arena.ty, arena.dungeon && arena.dungeon.open) ? FLOOR : WALL;
       if (arenaSafe(tx, ty)) return FLOOR;
       const th = arena.th;
       // Columnas de 2×2 (cobertura) y charcos según el tipo de la arena.

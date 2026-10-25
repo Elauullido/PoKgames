@@ -23,8 +23,8 @@ G.Rift = (() => {
   // probable (20 %, 40 %, 60 %, 80 %, 100 %): como mucho 2,5 min sin grieta.
   // Desde 2 min antes de la Sentencia de Arceus (minuto 30) ya no se abren.
   const CHECK = 30, CHANCE = 0.2, TTL = 45;
-  const ARENA_R = 11, ARENA_TIME = 120, FROM = 75;
-  let rift = null;          // { x, y, ttl, t }
+  const ARENA_R = 11, ARENA_TIME = 120, FROM = 75, GLITCH_CHANCE = 0.07;
+  let rift = null;          // { x, y, ttl, t, kind }
   let arena = null;         // { tx, ty, r, dex, shiny, x, y, back, biome, t, phase, endT, bossId }
   let zone = null;          // dónde estaba la última arena { x, y, r } (ver leftBehind)
   let checkT = CHECK, asked = false, downT = 0, misses = 0;
@@ -70,19 +70,21 @@ G.Rift = (() => {
       const a = Math.random() * 6.2832, d = G.U.rand(380, 560);
       const x = near.x + Math.cos(a) * d, y = near.y + Math.sin(a) * d * 0.85;
       if (!G.World.isFree(x, y, 22)) continue;
-      show(x, y, TTL);
-      if (G.Coop.isHost) G.Coop.broadcast(['rift', Math.round(x), Math.round(y), TTL]);
+      const kind = Math.random() < GLITCH_CHANCE ? 'glitch' : 'normal';
+      show(x, y, TTL, kind);
+      if (G.Coop.isHost) G.Coop.broadcast(['rift', Math.round(x), Math.round(y), TTL, kind]);
       return;
     }
   }
 
   /** Aparece la grieta (también la que manda el anfitrión). */
-  function show(x, y, ttl) {
-    rift = { x, y, ttl, t: 0 };
+  function show(x, y, ttl, kind = 'normal') {
+    rift = { x, y, ttl, t: 0, kind };
     asked = false;
     // (El aviso grande lo dibuja hud.js mientras rift.t < 4,5 s.)
     G.Audio.sfx('rift');
-    G.FX.ring(x, y, 6, 80, '#b48aff', 0.7, 5);
+    const color = kind === 'glitch' ? '#42fff0' : '#b48aff';
+    G.FX.ring(x, y, 6, 80, color, 0.7, 5);
   }
 
   function enter() {
@@ -100,6 +102,18 @@ G.Rift = (() => {
   function start(forceType) {
     if (arena) return;
     forceType = forceType || nextType; nextType = null;
+    const glitch = !!(rift && rift.kind === 'glitch');
+    if (glitch) {
+      const pool = G.DEX.filter(p => G.SPRITE_META[p.dex]);
+      const mon = G.U.pick(pool);
+      const cfg = { tx: 5000 + Math.floor(Math.random() * 3000), ty: 5000 + Math.floor(Math.random() * 3000),
+        r: 28, dex: mon.dex, shiny: false, type: 'glitch', layout: 'glitch', glitch: true };
+      if (G.Coop.isHost) G.Coop.broadcast(['arena', cfg]);
+      begin(cfg);
+      spawnGlitchWave(4, [[0, 1], [-1, 0], [1, 0], [0, -2]]);
+      G.Spawner.say('Explora las salas: resuelve los dos puzles para abrir la puerta', 5, true);
+      return;
+    }
     let pool = G.DEX.filter(p => p.leg && G.SPRITE_META[p.dex]);
     if (forceType && pool.some(p => p.types.includes(forceType))) pool = pool.filter(p => p.types.includes(forceType));
     // Los legendarios que aún no has vencido salen 4 veces más (menos repetidos).
@@ -125,7 +139,8 @@ G.Rift = (() => {
     const ts = TS();
     arena = Object.assign({}, cfg, {
       x: cfg.tx * ts + ts / 2, y: cfg.ty * ts + ts / 2,
-      back: { x: pl.x, y: pl.y }, biome: G.World.biome, t: 0, phase: 'fight', endT: 0, bossId: 0
+      back: { x: pl.x, y: pl.y }, biome: G.World.biome, t: 0, phase: 'fight', endT: 0, bossId: 0,
+      glitch: !!cfg.glitch, dungeon: cfg.glitch ? { a: 0, b: 0, open: false, stepA: 0, stepB: 0, spawnedA: false, spawnedB: false, lastA: -1, lastB: -1, seenDex: [cfg.dex] } : null
     });
     zone = { x: arena.x, y: arena.y, r: (cfg.r + 10) * ts };
     rift = null; asked = false; downT = 0;
@@ -133,18 +148,36 @@ G.Rift = (() => {
     G.Projectiles.clear();
     G.Combat.clearFields();
     G.Hazards.clear();
-    G.World.setArena({ tx: cfg.tx, ty: cfg.ty, r: cfg.r, type: cfg.type });
+    G.World.setArena({ tx: cfg.tx, ty: cfg.ty, r: cfg.r, type: cfg.type, layout: cfg.layout, dungeon: arena.dungeon });
     G.World.setBiome(G.Tiles.arenaBiome(cfg.type), true);
     // Cada arena trae su clima (el volcán, sol; el glaciar, nieve...).
     const th = G.Tiles.ARENA_THEMES[cfg.type];
     if (th && th.weather) G.Weather.force(th.weather, ARENA_TIME + 15);
     // Todos al sur de la arena, en fila; el legendario aparece al norte.
     const ps = G.Game.everyone();
-    ps.forEach((p, i) => { p.x = arena.x + (i - (ps.length - 1) / 2) * 34; p.y = arena.y + ts * 3; });
+    ps.forEach((p, i) => { p.x = arena.x + (i - (ps.length - 1) / 2) * 34; p.y = arena.y + ts * (cfg.glitch ? 11 : 3); });
     G.Camera.x = pl.x; G.Camera.y = pl.y;
-    G.Game.flash('#c9a6ff', 0.9);
+    G.Game.flash(cfg.glitch ? '#42fff0' : '#c9a6ff', 0.9);
     G.Audio.sfx('rift');
     G.Spawner.say('Has entrado en la grieta…', 2.4, true);
+  }
+
+  function spawnGlitchWave(n, spots) {
+    if (!arena || !arena.glitch || !authority()) return;
+    const t = G.Game.st.time, players = G.Game.everyone().length, ts = TS();
+    const pool = G.DEX.filter(p => G.SPRITE_META[p.dex] && !arena.dungeon.seenDex.includes(p.dex));
+    for (let i = 0; i < n; i++) {
+      const mi = Math.floor(Math.random() * pool.length), mon = pool.splice(mi, 1)[0];
+      if (!mon) break;
+      arena.dungeon.seenDex.push(mon.dex);
+      const spot = spots[i % spots.length], x = arena.x + spot[0] * ts, y = arena.y + spot[1] * ts;
+      const def = { dex: mon.dex, name: mon.name, hp: Math.round((90 + t * 2.1) * G.Coop.scaleHp(players)),
+        spd: G.U.clamp(mon.spd * 0.72, 38, 92), dmg: 18 + t / 38, xp: 32 + t * 0.5,
+        behavior: mon.types.some(x => ['psychic','electric','ghost','fairy','fire','water','ice','dragon'].includes(x)) ? 'ranged' : 'charger',
+        shotDmg: 12 + t / 80, shotCd: 1.3, range: 220 };
+      const e = new G.Enemy(def, x, y, { hp: 1, spd: 1, dmg: 1 });
+      e.glitched = true; e.name = 'GLITCH ' + mon.name; G.EnemyMgr.add(e);
+    }
   }
 
   function spawnLegend() {
@@ -185,6 +218,23 @@ G.Rift = (() => {
 
   function arenaTick(dt, pl) {
     arena.t += dt;
+    if (arena.glitch) {
+      dungeonTick(dt, pl);
+      if (arena.phase === 'fight' && (arena.t > 300 || G.Game.everyone().every(p => p.dead))) {
+        G.Coop.isHost && G.Coop.broadcast(['al']); lost(); return;
+      }
+      if (arena.phase === 'fight' && arena.bossId) {
+        if (!authority()) return;
+        keepInside();
+        const boss = G.EnemyMgr.get(arena.bossId);
+        if (!boss || boss.dead) { G.Coop.isHost && G.Coop.broadcast(['aw']); won(); return; }
+        if (arena.t > 300) { G.Coop.isHost && G.Coop.broadcast(['al']); lost(); }
+      } else if (arena.phase !== 'fight') {
+        arena.endT -= dt;
+        if (arena.endT <= 0) finish();
+      }
+      return;
+    }
     if (arena.phase === 'fight') {
       if (!authority()) return;
       keepInside();
@@ -197,6 +247,59 @@ G.Rift = (() => {
     }
     arena.endT -= dt;
     if (arena.endT <= 0) finish();
+  }
+
+  const GLYPHS = [[-10,-3],[-7,0],[-10,2]], NODES = [[7,-3],[10,0],[7,2]];
+  const SEQ_A = [0,2,1], SEQ_B = [2,0,1];
+  function dungeonTick(dt, pl) {
+    if (!authority() || arena.phase !== 'fight') return;
+    const ts = TS(), party = G.Game.everyone().filter(p => !p.dead), d = arena.dungeon;
+    const before = [d.a, d.b, d.stepA, d.stepB].join(',');
+    // Las salas laterales tienen encuentros propios con Pokémon corrompidos.
+    if (!d.spawnedA && party.some(p => (p.x-arena.x)/ts < -5 && (p.y-arena.y)/ts > -6 && (p.y-arena.y)/ts < 4)) { d.spawnedA = true; spawnGlitchWave(3, [[-11,-4],[-6,-4],[-11,2]]); }
+    if (!d.spawnedB && party.some(p => (p.x-arena.x)/ts > 5 && (p.y-arena.y)/ts > -6 && (p.y-arena.y)/ts < 4)) { d.spawnedB = true; spawnGlitchWave(3, [[6,-4],[11,-4],[11,2]]); }
+    const pad = (points, progress, seq, lastKey) => {
+      let found = -1;
+      points.forEach((p, i) => { if (party.some(who => G.U.dist2(who.x, who.y, arena.x + p[0] * ts, arena.y + p[1] * ts) < 24 * 24)) found = i; });
+      if (found < 0) { d[lastKey] = -1; return progress; }
+      if (found === d[lastKey]) return progress;
+      d[lastKey] = found;
+      if (found === seq[progress]) {
+        progress++;
+        G.FX.ring(arena.x + points[found][0] * ts, arena.y + points[found][1] * ts, 5, 52, '#42fff0', 0.5, 4);
+        G.Audio.sfx('select');
+        if (progress >= seq.length) return seq.length;
+      } else { progress = found === seq[0] ? 1 : 0; G.Audio.sfx('back'); }
+      return progress;
+    };
+    if (!d.a) d.stepA = pad(GLYPHS, d.stepA, SEQ_A, 'lastA');
+    if (!d.b) d.stepB = pad(NODES, d.stepB, SEQ_B, 'lastB');
+    const oldOpen = d.open;
+    d.a = d.stepA >= SEQ_A.length ? 1 : d.a;
+    d.b = d.stepB >= SEQ_B.length ? 1 : d.b;
+    d.open = !!(d.a && d.b);
+    if (oldOpen !== d.open) {
+      G.World.setArena(G.World.arena);
+      if (d.open) {
+        G.Spawner.say('¡Los dos puzles están resueltos! La puerta del jefe se ha abierto', 4, true);
+        if (G.Coop.isHost) G.Coop.broadcast(['rp', { a:d.a,b:d.b,stepA:d.stepA,stepB:d.stepB,open:d.open }]);
+        spawnGlitchBoss();
+      }
+    } else if (G.Coop.isHost && before !== [d.a, d.b, d.stepA, d.stepB].join(',')) {
+      G.Coop.broadcast(['rp', { a:d.a,b:d.b,stepA:d.stepA,stepB:d.stepB,open:d.open }]);
+    }
+  }
+
+  function spawnGlitchBoss() {
+    if (!arena || arena.bossId || !authority()) return;
+    const mon = G.DEX_BY[arena.dex], t = G.Game.st.time, n = G.Game.everyone().length;
+    const def = { dex: mon.dex, name: mon.name, hp: Math.round((2800 + t * 8) * G.Coop.scaleHp(n) * (n > 1 ? 1.35 : 1)),
+      spd: 65, dmg: 32 + t / 24, xp: 850 + t, behavior: 'ranged', shotDmg: 20 + t / 45, shotCd: 0.8, range: 280 };
+    const ts = TS(), e = new G.Enemy(def, arena.x, arena.y - 21 * ts, { hp:1,spd:1,dmg:1 }, true);
+    e.glitched = true; e.name = 'GLITCHED ' + mon.name; e.flying = false;
+    G.EnemyMgr.add(e); arena.bossId = e.id;
+    G.Spawner.say('¡' + e.name + ' custodia la última sala!', 3.6, true);
+    G.Camera.kick(1); G.Audio.sfx('boss');
   }
 
   function won() {
@@ -248,35 +351,54 @@ G.Rift = (() => {
 
   /** La grieta, para ordenarla por Y con el resto de la escena. */
   function drawable() {
-    if (!rift) return null;
-    return {
-      y: rift.y,
-      draw(ctx) {
+    const out = [];
+    if (rift) out.push({ y: rift.y, draw(ctx) {
         const P = G.Sprites.PX;
         const img = G.Tiles.propSprite(0, 'rift', Math.floor(rift.t * 8) % 4);
         const w = img.width * P, h = img.height * P;
         const fadeIn = Math.min(1, rift.t * 2), fadeOut = Math.min(1, rift.ttl / 1.5);
         ctx.save();
         ctx.globalAlpha = 0.25 * fadeIn * fadeOut;
-        ctx.fillStyle = '#7b3cff';
+        ctx.fillStyle = rift.kind === 'glitch' ? '#20cfc7' : '#7b3cff';
         ctx.beginPath(); ctx.ellipse(rift.x, rift.y, 34, 12, 0, 0, 6.2832); ctx.fill();
         ctx.globalAlpha = fadeIn * fadeOut;
-        ctx.drawImage(img, Math.round(rift.x - w / 2), Math.round(rift.y - h + 4), w, h);
+        ctx.save(); if (rift.kind === 'glitch') ctx.filter = 'hue-rotate(280deg) saturate(1.7)';
+        ctx.drawImage(img, Math.round(rift.x - w / 2), Math.round(rift.y - h + 4), w, h); ctx.restore();
         ctx.restore();
-        if (Math.random() < 0.3) G.FX.px(rift.x + G.U.rand(-14, 14), rift.y - G.U.rand(10, 80), '#d9c2ff', { vy: -40, life: 0.6 });
-      }
-    };
+        if (Math.random() < 0.3) G.FX.px(rift.x + G.U.rand(-14, 14), rift.y - G.U.rand(10, 80), rift.kind === 'glitch' ? '#42fff0' : '#d9c2ff', { vy: -40, life: 0.6 });
+      }});
+    if (arena && arena.glitch) {
+      const ts = TS(), points = [...GLYPHS.map((p,i)=>({p,i})), ...NODES.map((p,i)=>({p,i:i+3}))];
+      points.forEach((q,i) => out.push({ y: arena.y + q.p[1] * ts, draw(ctx) {
+        const x = arena.x + q.p[0] * ts, y = arena.y + q.p[1] * ts, on = i < 3 ? !!arena.dungeon.a : !!arena.dungeon.b;
+        const glyphs = ['◇','△','○'];
+        ctx.save(); ctx.globalAlpha = on ? 0.42 : 0.8; ctx.fillStyle = on ? '#65ffe8' : (i < 3 ? ['#ff56c8','#ff9e58','#d37cff'][q.i] : ['#4ce6ff','#ffd853','#ff6dd0'][q.i]);
+        ctx.beginPath(); ctx.arc(x,y,18 + Math.sin(performance.now()/210+i)*2,0,6.2832); ctx.fill();
+        ctx.globalAlpha=1; ctx.fillStyle='#101a2b'; ctx.font='bold 16px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(i<3?glyphs[q.i]:'✦',x,y); ctx.restore();
+      }}));
+      out.push({ y: arena.y - 18 * ts, draw(ctx) {
+        const x=arena.x,y=arena.y-18*ts; ctx.save(); ctx.fillStyle=arena.dungeon.open?'#42fff0':'#ff4bc8'; ctx.globalAlpha=.85;
+        ctx.fillRect(x-80,y-5,160,10); ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.font='bold 11px sans-serif';
+        ctx.fillText(arena.dungeon.open?'PUERTA ABIERTA':'PUERTA SELLADA',x,y-18); ctx.restore();
+      }});
+      out.push({ y: arena.y + 5 * ts, draw(ctx) {
+        const x=arena.x, y=arena.y+5*ts; ctx.save(); ctx.fillStyle='#d6fff9'; ctx.textAlign='center'; ctx.font='bold 12px sans-serif';
+        ctx.fillText('RUNAS: ◇ → ○ → △',x,y); ctx.fillText('NODOS: ROSA → CIAN → ORO',x,y+17); ctx.restore();
+      }});
+    }
+    return out;
   }
 
   // ---------------- red ----------------
 
   function onEvent(ev) {
     switch (ev[0]) {
-      case 'rift': show(ev[1], ev[2], ev[3]); break;
+      case 'rift': show(ev[1], ev[2], ev[3], ev[4]); break;
       case 'riftx': rift = null; break;
       case 'arena': begin(ev[1]); break;
       case 'aw': won(); break;
       case 'al': lost(); break;
+      case 'rp': if (arena && arena.dungeon) { Object.assign(arena.dungeon, ev[1]); G.World.setArena(G.World.arena); if (arena.dungeon.open && !arena.bossId) spawnGlitchBoss(); } break;
     }
   }
 
@@ -284,7 +406,7 @@ G.Rift = (() => {
     reset, update, drawable, onEvent, leftBehind, enterRequest() { if (!arena) start(); },
     get rift() { return rift; }, get arena() { return arena; },
     get inArena() { return !!arena; },
-    get timeLeft() { return arena ? Math.max(0, ARENA_TIME - arena.t) : 0; },
+    get timeLeft() { return arena ? Math.max(0, (arena.glitch ? 300 : ARENA_TIME) - arena.t) : 0; },
     debugOpen() { open(); },
     /** Para pruebas: arena de un tipo ya. */
     debugArena(type) { start(type); },

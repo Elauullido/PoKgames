@@ -783,8 +783,7 @@ G.Game = (() => {
     for (const p of G.World.visibleProps(cam)) items.push({ y: p.flat ? p.y - 4000 : p.y, prop: p });
     for (const e of G.EnemyMgr.drawables(cam)) items.push({ y: e.y, ent: e });
     for (const e of extra) items.push({ y: e.y, ent: e });
-    const rift = G.Rift.drawable();
-    if (rift) items.push({ y: rift.y, ent: rift });
+    for (const rift of G.Rift.drawable()) items.push({ y: rift.y, ent: rift });
     const arceus = pl && state !== 'ui' ? G.Judgment.drawable() : null;
     if (arceus) items.push({ y: arceus.y, ent: arceus });
     if (pl && state !== 'ui') for (const d of G.Events.drawables()) items.push({ y: d.y, ent: d });

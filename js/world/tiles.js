@@ -107,7 +107,10 @@ G.Tiles = (() => {
     // árboles muertos, con un claro donde aterriza (clear). No es de ninguna grieta.
     judgment: { name: 'Ruinas del Juicio', floor: '#4a4240', wall: '#2e2829', liquid: 'lava', liq: '#e8a82a', foam: '#fff1b8', prop: 'dead',
                 leaf: '#3e3633', trunk: '#2a2321', flowers: ['#8a7f76', '#e8a82a', '#5a514c'], grass: '#5e544c', rock: '#6a625c',
-                pools: 0, pillars: 0.03, props: { tree: 0.012, rock: 0.02 }, weather: null, clear: 4.5 }
+                pools: 0, pillars: 0.03, props: { tree: 0.012, rock: 0.02 }, weather: null, clear: 4.5 },
+    glitch:   { name: 'Labyrinth Glitcheado', floor: '#25364a', wall: '#111b2c', liquid: 'water', liq: '#24e5dc', foam: '#d2fffb', prop: 'crystal',
+                leaf: '#35e8dc', trunk: '#16253a', flowers: ['#43fff0', '#ff4bc8', '#fff06a'], grass: '#24a9b8', rock: '#55758a',
+                pools: 0, pillars: 0, props: {}, weather: null }
   };
   const ARENA_TYPES = Object.keys(ARENA_THEMES);
 

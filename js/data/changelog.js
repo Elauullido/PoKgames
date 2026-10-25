@@ -6,6 +6,10 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-25', title: ['Grieta Glitcheada', 'Glitched Rift'], new: [
+    ['Una grieta poco común y turquesa lleva a un laberinto con Pokémon glitcheados, dos puzles en salas separadas y una puerta que se abre al resolverlos para llegar al jefe.',
+     'A rare turquoise rift leads to a labyrinth with glitched Pokémon, two puzzles in separate rooms, and a door that opens once both are solved to reach the boss.']
+  ] },
   { d: '2026-10-23', title: ['Ranking de daño a Arceus y Tablas', 'Arceus damage ranking and Plates'], new: [
     ["Botón de YouTube arriba, junto a Novedades: lleva al canal del juego y, cuando hay directo, se pone rojo con «EN DIRECTO» y te lleva a verlo.",
      "YouTube button at the top, next to What's new: it takes you to the game's channel and, when there is a live stream, it turns red with \"LIVE\" and takes you to watch it."],

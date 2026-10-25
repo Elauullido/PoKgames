@@ -185,7 +185,8 @@ G.HUD = (() => {
     if (rift) {
       const sx = (rift.x - cam.left()) * cam.scale, sy = (rift.y - 40 - cam.top()) * cam.scale;
       const now = performance.now() / 1000, beat = 0.5 + Math.sin(now * 7) * 0.5;
-      const label = 'GRIETA · ' + Math.round(G.U.dist(pl.x, pl.y, rift.x, rift.y) / 32) + ' m · ' + Math.ceil(rift.ttl) + ' s';
+      const color = rift.kind === 'glitch' ? '#42fff0' : '#b48aff';
+      const label = (rift.kind === 'glitch' ? 'GRIETA GLITCHEADA' : 'GRIETA') + ' · ' + Math.round(G.U.dist(pl.x, pl.y, rift.x, rift.y) / 32) + ' m · ' + Math.ceil(rift.ttl) + ' s';
       const off = sx < 0 || sx > w || sy < 0 || sy > h;
       ctx.save();
       if (off) {
@@ -194,7 +195,7 @@ G.HUD = (() => {
         ctx.translate(ex, ey);
         // Halo que late.
         ctx.globalAlpha = 0.18 + beat * 0.22;
-        ctx.fillStyle = '#b48aff';
+        ctx.fillStyle = color;
         ctx.beginPath(); ctx.arc(0, 0, 30 + beat * 8, 0, 6.2832); ctx.fill();
         ctx.globalAlpha = 1;
         const tri = (k) => {
@@ -205,13 +206,13 @@ G.HUD = (() => {
           ctx.closePath();
         };
         tri(1.12); ctx.fillStyle = '#1a0b33'; ctx.fill();
-        tri(1); ctx.fillStyle = beat > 0.5 ? '#e2d0ff' : '#a06bff'; ctx.fill();
+        tri(1); ctx.fillStyle = beat > 0.5 ? color : (rift.kind === 'glitch' ? '#168c95' : '#a06bff'); ctx.fill();
         ctx.font = F(800, 12);
         ctx.textAlign = ca > 0.3 ? 'right' : ca < -0.3 ? 'left' : 'center';
         const lx = -ca * 34, ly = -sa * 30 + 4;
         ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,.85)';
         ctx.strokeText(label, lx, ly);
-        ctx.fillStyle = '#e2d0ff';
+        ctx.fillStyle = color;
         ctx.fillText(label, lx, ly);
       } else {
         // Encima de la grieta: flecha hacia abajo que bota.
@@ -219,19 +220,25 @@ G.HUD = (() => {
         ctx.translate(sx, by);
         ctx.beginPath(); ctx.moveTo(-15, -12); ctx.lineTo(15, -12); ctx.lineTo(0, 8); ctx.closePath();
         ctx.lineWidth = 4; ctx.strokeStyle = '#1a0b33'; ctx.stroke();
-        ctx.fillStyle = beat > 0.5 ? '#e2d0ff' : '#a06bff'; ctx.fill();
+        ctx.fillStyle = beat > 0.5 ? color : (rift.kind === 'glitch' ? '#168c95' : '#a06bff'); ctx.fill();
         ctx.font = F(800, 11); ctx.textAlign = 'center';
         ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,.85)';
-        const l2 = 'GRIETA · ' + Math.ceil(rift.ttl) + ' s';
-        ctx.strokeText(l2, 0, -18); ctx.fillStyle = '#e2d0ff'; ctx.fillText(l2, 0, -18);
+        const l2 = (rift.kind === 'glitch' ? 'GLITCHEADA' : 'GRIETA') + ' · ' + Math.ceil(rift.ttl) + ' s';
+        ctx.strokeText(l2, 0, -18); ctx.fillStyle = color; ctx.fillText(l2, 0, -18);
       }
       ctx.restore();
     }
     if (G.Rift.inArena) {
       ctx.textAlign = 'center';
       ctx.font = F(800, 12);
-      ctx.fillStyle = '#d9c2ff';
-      ctx.fillText('GRIETA · ' + G.U.mmss(G.Rift.timeLeft), w / 2, boss ? 98 : 76);
+      const arena = G.Rift.arena;
+      ctx.fillStyle = arena.glitch ? '#8afff4' : '#d9c2ff';
+      if (arena.glitch) {
+        const d = arena.dungeon;
+        ctx.fillText('LABERINTO GLITCHEADO · ' + G.U.mmss(G.Rift.timeLeft), w / 2, boss ? 98 : 76);
+        ctx.font = F(700, 11);
+        ctx.fillText('Runas ' + (d.a ? '✓' : d.stepA + '/3') + '   ·   Nodos ' + (d.b ? '✓' : d.stepB + '/3') + '   ·   ' + (d.open ? 'PUERTA ABIERTA' : 'PUERTA SELLADA'), w / 2, boss ? 115 : 93);
+      } else ctx.fillText('GRIETA · ' + G.U.mmss(G.Rift.timeLeft), w / 2, boss ? 98 : 76);
     }
 
     // Eventos: cuenta atrás, flecha al Pokémon perdido / a la marca y a los duendes.
@@ -245,14 +252,14 @@ G.HUD = (() => {
       ctx.globalAlpha = a;
       ctx.translate(w / 2, y0); ctx.scale(pop, pop);
       ctx.font = F(800, 20);
-      const t1 = '¡SE HA ABIERTO UNA GRIETA!', t2 = 'Sigue la flecha morada: dentro te espera un legendario';
+      const t1 = rift.kind === 'glitch' ? '¡SE ABRIÓ UNA GRIETA GLITCHEADA!' : '¡SE HA ABIERTO UNA GRIETA!', t2 = rift.kind === 'glitch' ? 'Explora las salas, resuelve los puzles y encuentra al jefe' : 'Sigue la flecha morada: dentro te espera un legendario';
       const bw = Math.min(w - 24, Math.max(ctx.measureText(t1).width, (ctx.font = F(700, 11), ctx.measureText(t2).width)) + 36);
       roundRect(ctx, -bw / 2, -26, bw, 52, 10);
-      ctx.fillStyle = 'rgba(26,11,51,.88)'; ctx.fill();
-      ctx.lineWidth = 2; ctx.strokeStyle = '#b48aff'; ctx.stroke();
+      ctx.fillStyle = rift.kind === 'glitch' ? 'rgba(8,36,47,.92)' : 'rgba(26,11,51,.88)'; ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = rift.kind === 'glitch' ? '#42fff0' : '#b48aff'; ctx.stroke();
       ctx.textAlign = 'center';
-      ctx.font = F(800, 20); ctx.fillStyle = '#e2d0ff'; ctx.fillText(t1, 0, -2);
-      ctx.font = F(700, 11); ctx.fillStyle = '#c9b0ff'; ctx.fillText(t2, 0, 16);
+      ctx.font = F(800, 20); ctx.fillStyle = rift.kind === 'glitch' ? '#8afff4' : '#e2d0ff'; ctx.fillText(t1, 0, -2);
+      ctx.font = F(700, 11); ctx.fillStyle = rift.kind === 'glitch' ? '#b2fff9' : '#c9b0ff'; ctx.fillText(t2, 0, 16);
       ctx.restore();
     }
 

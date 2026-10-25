@@ -417,7 +417,7 @@ G.Coop = (() => {
   function applyHostEvent(ev) {
     switch (ev[0]) {
       case 'ne':
-        G.EnemyMgr.addRemote({ id: ev[1], dex: ev[2], x: ev[3], y: ev[4], boss: !!ev[5], shiny: !!ev[6], hp: ev[7], dmg: ev[8], beh: ev[9] });
+        G.EnemyMgr.addRemote({ id: ev[1], dex: ev[2], x: ev[3], y: ev[4], boss: !!ev[5], shiny: !!ev[6], hp: ev[7], dmg: ev[8], beh: ev[9], glitched: !!ev[10] });
         break;
       case 'ed': G.EnemyMgr.removeRemote(ev[1], true); break;
       case 'eg': G.EnemyMgr.removeRemote(ev[1], false); break;
@@ -448,7 +448,7 @@ G.Coop = (() => {
       case 'ha': hostAway = !!ev[1]; updateAway(); break;
       case 'sh': api.shiny(ev[1]); break;
       case 'ov': { const cb = api.over; const d = ev[1]; end(); cb(d); break; }
-      case 'rift': case 'riftx': case 'arena': case 'aw': case 'al': G.Rift.onEvent(ev); break;
+      case 'rift': case 'riftx': case 'arena': case 'aw': case 'al': case 'rp': G.Rift.onEvent(ev); break;
       case 'jd': case 'jk': case 'jb': G.Judgment.onEvent(ev); break;
       case 'wx': G.Weather.onEvent(ev); break;
       case 'ev': G.Events.onNet(ev); break;
@@ -475,7 +475,7 @@ G.Coop = (() => {
   // anfitrión
   function hurtShown(e, d, color) { emitNear(['hn', e.id, d, color], e.x, e.y, hitFrom); }
   function enemyAdded(e) {
-    emit(['ne', e.id, e.dex, r1(e.x), r1(e.y), e.boss ? 1 : 0, e.shiny ? 1 : 0, Math.ceil(e.maxHp), r2(e.dmg), e.behavior]);
+    emit(['ne', e.id, e.dex, r1(e.x), r1(e.y), e.boss ? 1 : 0, e.shiny ? 1 : 0, Math.ceil(e.maxHp), r2(e.dmg), e.behavior, e.glitched ? 1 : 0]);
   }
   function enemyGone(e, died) { emit([died ? 'ed' : 'eg', e.id]); }
   function enemyShot(p, type) { emit(['es', r1(p.x), r1(p.y), r1(p.vx), r1(p.vy), r2(p.dmg), p.r, p.life, type, p.cat]); }

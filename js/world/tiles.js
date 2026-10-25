@@ -110,7 +110,10 @@ G.Tiles = (() => {
                 pools: 0, pillars: 0.03, props: { tree: 0.012, rock: 0.02 }, weather: null, clear: 4.5 },
     glitch:   { name: 'Labyrinth Glitcheado', floor: '#25364a', wall: '#111b2c', liquid: 'water', liq: '#24e5dc', foam: '#d2fffb', prop: 'crystal',
                 leaf: '#35e8dc', trunk: '#16253a', flowers: ['#43fff0', '#ff4bc8', '#fff06a'], grass: '#24a9b8', rock: '#55758a',
-                pools: 0, pillars: 0, props: {}, weather: null }
+                pools: 0, pillars: 0, props: {}, weather: null },
+    pharaoh: { name: 'Tumba del Faraón', floor: '#9a7843', wall: '#38291e', liquid: 'water', liq: '#514437', foam: '#d7bd82', prop: 'dead',
+                leaf: '#8b7746', trunk: '#392a1c', flowers: ['#d6a84b', '#705333', '#c7ad78'], grass: '#a8874c', rock: '#756044',
+                pools: 0, pillars: 0, props: {}, weather: 'fog' }
   };
   const ARENA_TYPES = Object.keys(ARENA_THEMES);
 

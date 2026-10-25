@@ -20,7 +20,7 @@ G.HUD = (() => {
     const bx = G.U.clamp(w - 112, 5, w - 78), by = 58;
     adminButton(ctx, bx, by, 68, 29, '⚙ ADMIN', () => { adminOpen = !adminOpen; });
     if (!adminOpen) return;
-    const pw = Math.min(340, w - 20), ph = 322, px = (w - pw) / 2, py = G.U.clamp((h - ph) / 2, 8, Math.max(8, h - ph - 8));
+    const pw = Math.min(340, w - 20), ph = 354, px = (w - pw) / 2, py = G.U.clamp((h - ph) / 2, 8, Math.max(8, h - ph - 8));
     roundRect(ctx, px, py, pw, ph, 12);
     ctx.fillStyle = 'rgba(8,13,25,.96)'; ctx.fill();
     ctx.lineWidth = 2; ctx.strokeStyle = '#46e6d2'; ctx.stroke();
@@ -81,9 +81,11 @@ G.HUD = (() => {
       if (G.Game.player.adminFuseMoves(a, b)) G.Spawner.say('¡Ataques combinados en un solo hueco!', 2.6, true);
       else G.Spawner.say('Elige dos ataques que estén en huecos distintos', 2.4, true);
     }, '#ffcf62');
-    adminButton(ctx, px + 18 + (pw - 30) / 2, py + 270, (pw - 30) / 2, 25, 'Grieta normal', () => { if (!blocked && !G.Rift.rift) G.Rift.adminOpen('normal'); }, '#b48aff');
-    adminButton(ctx, px + 12, py + 297, (pw - 30) / 2, 22, 'Grieta glitch', () => { if (!blocked && !G.Rift.rift) G.Rift.adminOpen('glitch'); }, '#42fff0');
-    adminButton(ctx, px + pw - 76, py + 297, 64, 22, 'Cerrar', () => { adminOpen = false; }, '#8495ae');
+    const rw = (pw - 36) / 3;
+    adminButton(ctx, px + 12, py + 300, rw, 25, 'Grieta normal', () => { if (!blocked && !G.Rift.rift) G.Rift.adminOpen('normal'); }, '#b48aff');
+    adminButton(ctx, px + 18 + rw, py + 300, rw, 25, 'Glitcheada', () => { if (!blocked && !G.Rift.rift) G.Rift.adminOpen('glitch'); }, '#42fff0');
+    adminButton(ctx, px + 24 + rw * 2, py + 300, rw, 25, 'Abismal', () => { if (!blocked && !G.Rift.rift) G.Rift.adminOpen('abyss'); }, '#ff9b38');
+    adminButton(ctx, px + pw - 76, py + 329, 64, 22, 'Cerrar', () => { adminOpen = false; }, '#8495ae');
   }
 
   /** Cartel encima de una esfera: su nombre y, con el ratón encima, también lo que hace. */
@@ -267,8 +269,8 @@ G.HUD = (() => {
     if (rift) {
       const sx = (rift.x - cam.left()) * cam.scale, sy = (rift.y - 40 - cam.top()) * cam.scale;
       const now = performance.now() / 1000, beat = 0.5 + Math.sin(now * 7) * 0.5;
-      const color = rift.kind === 'glitch' ? '#42fff0' : '#b48aff';
-      const label = (rift.kind === 'glitch' ? 'GRIETA GLITCHEADA' : 'GRIETA') + ' · ' + Math.round(G.U.dist(pl.x, pl.y, rift.x, rift.y) / 32) + ' m · ' + Math.ceil(rift.ttl) + ' s';
+      const color = rift.kind === 'glitch' ? '#42fff0' : rift.kind === 'abyss' ? '#ff9b38' : '#b48aff';
+      const label = G.T(rift.kind === 'glitch' ? 'GRIETA GLITCHEADA' : rift.kind === 'abyss' ? 'PUERTA ABISMAL' : 'GRIETA') + ' · ' + Math.round(G.U.dist(pl.x, pl.y, rift.x, rift.y) / 32) + ' m · ' + Math.ceil(rift.ttl) + ' s';
       const off = sx < 0 || sx > w || sy < 0 || sy > h;
       ctx.save();
       if (off) {
@@ -288,7 +290,7 @@ G.HUD = (() => {
           ctx.closePath();
         };
         tri(1.12); ctx.fillStyle = '#1a0b33'; ctx.fill();
-        tri(1); ctx.fillStyle = beat > 0.5 ? color : (rift.kind === 'glitch' ? '#168c95' : '#a06bff'); ctx.fill();
+        tri(1); ctx.fillStyle = beat > 0.5 ? color : (rift.kind === 'glitch' ? '#168c95' : rift.kind === 'abyss' ? '#b24a24' : '#a06bff'); ctx.fill();
         ctx.font = F(800, 12);
         ctx.textAlign = ca > 0.3 ? 'right' : ca < -0.3 ? 'left' : 'center';
         const lx = -ca * 34, ly = -sa * 30 + 4;
@@ -302,10 +304,10 @@ G.HUD = (() => {
         ctx.translate(sx, by);
         ctx.beginPath(); ctx.moveTo(-15, -12); ctx.lineTo(15, -12); ctx.lineTo(0, 8); ctx.closePath();
         ctx.lineWidth = 4; ctx.strokeStyle = '#1a0b33'; ctx.stroke();
-        ctx.fillStyle = beat > 0.5 ? color : (rift.kind === 'glitch' ? '#168c95' : '#a06bff'); ctx.fill();
+        ctx.fillStyle = beat > 0.5 ? color : (rift.kind === 'glitch' ? '#168c95' : rift.kind === 'abyss' ? '#b24a24' : '#a06bff'); ctx.fill();
         ctx.font = F(800, 11); ctx.textAlign = 'center';
         ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,.85)';
-        const l2 = (rift.kind === 'glitch' ? 'GLITCHEADA' : 'GRIETA') + ' · ' + Math.ceil(rift.ttl) + ' s';
+        const l2 = G.T(rift.kind === 'glitch' ? 'GLITCHEADA' : rift.kind === 'abyss' ? 'PUERTA ABISMAL' : 'GRIETA') + ' · ' + Math.ceil(rift.ttl) + ' s';
         ctx.strokeText(l2, 0, -18); ctx.fillStyle = color; ctx.fillText(l2, 0, -18);
       }
       ctx.restore();
@@ -314,8 +316,10 @@ G.HUD = (() => {
       ctx.textAlign = 'center';
       ctx.font = F(800, 12);
       const arena = G.Rift.arena;
-      ctx.fillStyle = arena.glitch ? '#8afff4' : '#d9c2ff';
-      if (arena.glitch) {
+      ctx.fillStyle = arena.glitch ? '#8afff4' : arena.pharaoh ? '#ffc15c' : '#d9c2ff';
+      if (arena.pharaoh) {
+        ctx.fillText(G.T('TUMBA DEL FARAÓN') + ' · ' + G.U.mmss(G.Rift.timeLeft), w / 2, boss ? 98 : 76);
+      } else if (arena.glitch) {
         const d = arena.dungeon;
         ctx.fillText('LABERINTO GLITCHEADO · ' + G.U.mmss(G.Rift.timeLeft), w / 2, boss ? 98 : 76);
         ctx.font = F(700, 11);

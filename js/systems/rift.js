@@ -22,7 +22,7 @@ G.Rift = (() => {
   // Menos azar (12-10-2026): cada vez que no sale, la siguiente es más
   // probable (20 %, 40 %, 60 %, 80 %, 100 %): como mucho 2,5 min sin grieta.
   // Desde 2 min antes de la Sentencia de Arceus (minuto 30) ya no se abren.
-  const CHECK = 30, CHANCE = 0.2, TTL = 45;
+  const CHECK = 30, CHANCE = 0.2, TTL = 45, ABYSS_CHANCE = 0.025;
   const ARENA_R = 11, ARENA_TIME = 120, FROM = 75, GLITCH_CHANCE = 0.07;
   let rift = null;          // { x, y, ttl, t, kind }
   let arena = null;         // { tx, ty, r, dex, shiny, x, y, back, biome, t, phase, endT, bossId }
@@ -70,7 +70,8 @@ G.Rift = (() => {
       const a = Math.random() * 6.2832, d = G.U.rand(380, 560);
       const x = near.x + Math.cos(a) * d, y = near.y + Math.sin(a) * d * 0.85;
       if (!G.World.isFree(x, y, 22)) continue;
-      const kind = Math.random() < GLITCH_CHANCE ? 'glitch' : 'normal';
+      const roll = Math.random();
+      const kind = roll < ABYSS_CHANCE ? 'abyss' : roll < ABYSS_CHANCE + GLITCH_CHANCE ? 'glitch' : 'normal';
       show(x, y, TTL, kind);
       if (G.Coop.isHost) G.Coop.broadcast(['rift', Math.round(x), Math.round(y), TTL, kind]);
       return;
@@ -86,9 +87,10 @@ G.Rift = (() => {
       const a = i * 2.399963, d = 130 + (i % 4) * 18;
       const x = pl.x + Math.cos(a) * d, y = pl.y + Math.sin(a) * d * 0.85;
       if (G.World.isFree(x, y, 22)) {
-        show(x, y, TTL, kind === 'glitch' ? 'glitch' : 'normal');
+        const riftKind = ['glitch', 'abyss'].includes(kind) ? kind : 'normal';
+        show(x, y, TTL, riftKind);
         if (G.Coop.isHost) G.Coop.broadcast(['rift', Math.round(x), Math.round(y), TTL, rift.kind]);
-        G.Spawner.say(rift.kind === 'glitch' ? '¡Grieta glitcheada invocada!' : '¡Grieta invocada!', 2.4, true);
+        G.Spawner.say(rift.kind === 'glitch' ? '¡Grieta glitcheada invocada!' : rift.kind === 'abyss' ? '¡Puerta Abismal invocada!' : '¡Grieta invocada!', 2.4, true);
         return true;
       }
     }
@@ -101,7 +103,7 @@ G.Rift = (() => {
     asked = false;
     // (El aviso grande lo dibuja hud.js mientras rift.t < 4,5 s.)
     G.Audio.sfx('rift');
-    const color = kind === 'glitch' ? '#42fff0' : '#b48aff';
+    const color = kind === 'glitch' ? '#42fff0' : kind === 'abyss' ? '#ff9b38' : '#b48aff';
     G.FX.ring(x, y, 6, 80, color, 0.7, 5);
   }
 
@@ -132,6 +134,17 @@ G.Rift = (() => {
       G.Spawner.say('Explora las salas: resuelve los dos puzles para abrir la puerta', 5, true);
       return;
     }
+    const abyss = !!(rift && rift.kind === 'abyss');
+    if (abyss) {
+      const pharaohDex = G.SPRITE_META[563] ? 563 : G.U.pick(G.DEX.filter(p => p.leg && G.SPRITE_META[p.dex])).dex;
+      const cfg = { tx: 8000 + Math.floor(Math.random() * 3000), ty: 8000 + Math.floor(Math.random() * 3000),
+        r: 58, dex: pharaohDex, shiny: false, type: 'pharaoh', layout: 'pharaoh', pharaoh: true };
+      if (G.Coop.isHost) G.Coop.broadcast(['arena', cfg]);
+      begin(cfg);
+      spawnPharaohWave(8, [[0, 30], [-4, 31], [4, 31], [-6, 33], [6, 33], [-2, 35], [2, 35], [0, 35]]);
+      G.Spawner.say('La Puerta Abismal se ha cerrado. Recorre las salas hasta la cámara del faraón.', 5, true);
+      return;
+    }
     let pool = G.DEX.filter(p => p.leg && G.SPRITE_META[p.dex]);
     if (forceType && pool.some(p => p.types.includes(forceType))) pool = pool.filter(p => p.types.includes(forceType));
     // Los legendarios que aún no has vencido salen 4 veces más (menos repetidos).
@@ -160,6 +173,8 @@ G.Rift = (() => {
       back: { x: pl.x, y: pl.y }, biome: G.World.biome, t: 0, phase: 'fight', endT: 0, bossId: 0,
       glitch: !!cfg.glitch, dungeon: cfg.glitch ? { a: 0, b: 0, open: false, stepA: 0, stepB: 0, spawnedA: false, spawnedB: false, lastA: -1, lastB: -1, seenDex: [cfg.dex] } : null
     });
+    arena.pharaoh = !!cfg.pharaoh;
+    if (arena.pharaoh) arena.tomb = { west: false, east: false, north: false };
     zone = { x: arena.x, y: arena.y, r: (cfg.r + 10) * ts };
     rift = null; asked = false; downT = 0;
     if (authority()) G.EnemyMgr.stash(); else G.EnemyMgr.clearRemote();
@@ -170,14 +185,66 @@ G.Rift = (() => {
     G.World.setBiome(G.Tiles.arenaBiome(cfg.type), true);
     // Cada arena trae su clima (el volcán, sol; el glaciar, nieve...).
     const th = G.Tiles.ARENA_THEMES[cfg.type];
-    if (th && th.weather) G.Weather.force(th.weather, ARENA_TIME + 15);
+    if (th && th.weather) G.Weather.force(th.weather, arena.pharaoh ? 615 : ARENA_TIME + 15);
     // Todos al sur de la arena, en fila; el legendario aparece al norte.
     const ps = G.Game.everyone();
-    ps.forEach((p, i) => { p.x = arena.x + (i - (ps.length - 1) / 2) * 34; p.y = arena.y + ts * (cfg.glitch ? 11 : 3); });
+    ps.forEach((p, i) => { p.x = arena.x + (i - (ps.length - 1) / 2) * 34; p.y = arena.y + ts * (cfg.glitch ? 11 : cfg.pharaoh ? 30 : 3); });
     G.Camera.x = pl.x; G.Camera.y = pl.y;
-    G.Game.flash(cfg.glitch ? '#42fff0' : '#c9a6ff', 0.9);
+    G.Game.flash(cfg.glitch ? '#42fff0' : cfg.pharaoh ? '#ffb84a' : '#c9a6ff', 0.9);
     G.Audio.sfx('rift');
     G.Spawner.say('Has entrado en la grieta…', 2.4, true);
+  }
+
+  const TOMB_POKEMON = [562, 563, 867, 769, 770, 710, 711, 623, 622, 302, 355, 356, 429, 442, 477, 478, 592, 593, 708, 709, 778];
+  function spawnPharaohWave(n, spots) {
+    if (!arena || !arena.pharaoh || !authority()) return;
+    const t = G.Game.st.time, party = G.Game.everyone().length, ts = TS();
+    let pool = TOMB_POKEMON.map(dex => G.DEX_BY[dex]).filter(mon => mon && G.SPRITE_META[mon.dex]);
+    if (!pool.length) pool = G.DEX.filter(mon => mon.types.includes('ghost') && G.SPRITE_META[mon.dex]);
+    if (!pool.length) pool = G.DEX.filter(mon => G.SPRITE_META[mon.dex]);
+    for (let i = 0; i < n; i++) {
+      const mon = G.U.pick(pool), spot = spots[i % spots.length];
+      const x = arena.x + spot[0] * ts, y = arena.y + spot[1] * ts;
+      const ghostly = mon.types.includes('ghost') || mon.types.includes('dark');
+      const def = { dex: mon.dex, name: mon.name,
+        hp: Math.round((250 + t * 3.4) * G.Coop.scaleHp(party)),
+        spd: G.U.clamp(mon.spd * (ghostly ? 0.68 : 0.55), 34, 82),
+        dmg: Math.round(48 + t / 15), xp: Math.round(90 + t),
+        behavior: ghostly ? 'ranged' : 'charger', shotDmg: Math.round(27 + t / 35), shotCd: 1.1, range: 260 };
+      const e = new G.Enemy(def, x, y, { hp: 1, spd: 1, dmg: 1 });
+      e.mummy = [562,563,867].includes(mon.dex);
+      e.halloween = [710,711,778].includes(mon.dex);
+      e.name = (e.mummy ? 'MOMIA ' : e.halloween ? 'CALABAZA ' : 'ESPECTRO ') + mon.name;
+      G.EnemyMgr.add(e);
+    }
+  }
+
+  function pharaohDungeonTick(dt) {
+    if (arena.phase !== 'fight') { arena.endT -= dt; if (arena.endT <= 0) finish(); return; }
+    if (!authority()) return;
+    const ts = TS(), party = G.Game.everyone().filter(p => !p.dead), d = arena.tomb;
+    const inside = (p, x1, x2, y1, y2) => (p.x-arena.x)/ts >= x1 && (p.x-arena.x)/ts <= x2 && (p.y-arena.y)/ts >= y1 && (p.y-arena.y)/ts <= y2;
+    if (!d.west && party.some(p => inside(p, -24, -9, 2, 22))) { d.west = true; spawnPharaohWave(14, [[-20,5],[-15,5],[-20,10],[-12,11],[-19,17],[-12,19],[-16,14],[-22,13]]); G.Spawner.say('¡Las momias despiertan en la cripta oeste!', 3.5, true); }
+    if (!d.east && party.some(p => inside(p, 10, 25, -24, -5))) { d.east = true; spawnPharaohWave(16, [[12,-7],[18,-7],[23,-8],[13,-13],[20,-15],[12,-20],[23,-21],[17,-23]]); G.Spawner.say('¡La sala de las calabazas está llena de espectros!', 3.5, true); }
+    if (!d.north && party.some(p => inside(p, -14, 14, -54, -40))) { d.north = true; spawnPharaohWave(18, [[-12,-43],[-8,-45],[-4,-43],[4,-43],[8,-45],[12,-43],[-10,-50],[-5,-51],[5,-51],[10,-50]]); spawnPharaohBoss(); }
+    if (arena.phase === 'fight' && (arena.t > 600 || G.Game.everyone().every(p => p.dead))) { G.Coop.isHost && G.Coop.broadcast(['al']); lost(); return; }
+    if (arena.phase === 'fight' && arena.bossId) {
+      keepInside();
+      const boss = G.EnemyMgr.get(arena.bossId);
+      if (!boss || boss.dead) { G.Coop.isHost && G.Coop.broadcast(['aw']); won(); }
+    }
+  }
+
+  function spawnPharaohBoss() {
+    if (!arena || arena.bossId || !authority()) return;
+    const mon = G.DEX_BY[arena.dex], t = G.Game.st.time, n = G.Game.everyone().length, ts = TS();
+    const def = { dex: mon.dex, name: mon.name, hp: Math.round((12500 + t * 36) * G.Coop.scaleHp(n)),
+      spd: 52, dmg: 105 + t / 12, xp: 5000, behavior: 'ranged', shotDmg: 62 + t / 30, shotCd: 0.72, range: 320 };
+    const e = new G.Enemy(def, arena.x, arena.y - ts * 47, { hp: 1, spd: 1, dmg: 1 }, true);
+    e.pharaoh = true; e.name = 'FARAÓN ' + mon.name; e.flying = false;
+    G.EnemyMgr.add(e); arena.bossId = e.id;
+    G.Spawner.say('¡El FARAÓN ' + mon.name + ' custodia la tumba!', 4, true);
+    G.Camera.kick(1.5); G.Audio.sfx('boss');
   }
 
   function spawnGlitchWave(n, spots) {
@@ -236,6 +303,7 @@ G.Rift = (() => {
 
   function arenaTick(dt, pl) {
     arena.t += dt;
+    if (arena.pharaoh) { pharaohDungeonTick(dt); return; }
     if (arena.glitch) {
       dungeonTick(dt, pl);
       if (arena.phase === 'fight' && (arena.t > 300 || G.Game.everyone().every(p => p.dead))) {
@@ -377,13 +445,13 @@ G.Rift = (() => {
         const fadeIn = Math.min(1, rift.t * 2), fadeOut = Math.min(1, rift.ttl / 1.5);
         ctx.save();
         ctx.globalAlpha = 0.25 * fadeIn * fadeOut;
-        ctx.fillStyle = rift.kind === 'glitch' ? '#20cfc7' : '#7b3cff';
+        ctx.fillStyle = rift.kind === 'glitch' ? '#20cfc7' : rift.kind === 'abyss' ? '#e75b24' : '#7b3cff';
         ctx.beginPath(); ctx.ellipse(rift.x, rift.y, 34, 12, 0, 0, 6.2832); ctx.fill();
         ctx.globalAlpha = fadeIn * fadeOut;
-        ctx.save(); if (rift.kind === 'glitch') ctx.filter = 'hue-rotate(280deg) saturate(1.7)';
+        ctx.save(); if (rift.kind === 'glitch') ctx.filter = 'hue-rotate(280deg) saturate(1.7)'; else if (rift.kind === 'abyss') ctx.filter = 'sepia(1) saturate(2.4) hue-rotate(345deg)';
         ctx.drawImage(img, Math.round(rift.x - w / 2), Math.round(rift.y - h + 4), w, h); ctx.restore();
         ctx.restore();
-        if (Math.random() < 0.3) G.FX.px(rift.x + G.U.rand(-14, 14), rift.y - G.U.rand(10, 80), rift.kind === 'glitch' ? '#42fff0' : '#d9c2ff', { vy: -40, life: 0.6 });
+        if (Math.random() < 0.3) G.FX.px(rift.x + G.U.rand(-14, 14), rift.y - G.U.rand(10, 80), rift.kind === 'glitch' ? '#42fff0' : rift.kind === 'abyss' ? '#ffbf52' : '#d9c2ff', { vy: -40, life: 0.6 });
       }});
     if (arena && arena.glitch) {
       const ts = TS(), points = [...GLYPHS.map((p,i)=>({p,i})), ...NODES.map((p,i)=>({p,i}))];
@@ -402,6 +470,18 @@ G.Rift = (() => {
       out.push({ y: arena.y + 5 * ts, draw(ctx) {
         const x=arena.x, y=arena.y+5*ts; ctx.save(); ctx.fillStyle='#d6fff9'; ctx.textAlign='center'; ctx.font='bold 12px sans-serif';
         ctx.fillText('RUNAS: ◇ → ○ → △',x,y); ctx.fillText('NODOS: ROSA → CIAN → ORO',x,y+17); ctx.restore();
+      }});
+    }
+    if (arena && arena.pharaoh) {
+      const ts = TS(), signs = [
+        { x: -16, y: 4, text: 'CRIPTA DE LAS MOMIAS' },
+        { x: 17, y: -6, text: 'GALERÍA DE CALABAZAS' },
+        { x: 0, y: -39, text: 'CÁMARA DEL FARAÓN' }
+      ];
+      for (const s of signs) out.push({ y: arena.y + s.y * ts, draw(ctx) {
+        ctx.save(); ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
+        ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(28,18,10,.9)'; ctx.strokeText(G.T(s.text), arena.x + s.x * ts, arena.y + s.y * ts);
+        ctx.fillStyle = '#ffd47a'; ctx.fillText(G.T(s.text), arena.x + s.x * ts, arena.y + s.y * ts); ctx.restore();
       }});
     }
     return out;
@@ -424,7 +504,7 @@ G.Rift = (() => {
     reset, update, drawable, onEvent, leftBehind, enterRequest() { if (!arena) start(); },
     get rift() { return rift; }, get arena() { return arena; },
     get inArena() { return !!arena; },
-    get timeLeft() { return arena ? Math.max(0, (arena.glitch ? 300 : ARENA_TIME) - arena.t) : 0; },
+    get timeLeft() { return arena ? Math.max(0, (arena.pharaoh ? 600 : arena.glitch ? 300 : ARENA_TIME) - arena.t) : 0; },
     debugOpen() { open(); }, adminOpen,
     /** Para pruebas: arena de un tipo ya. */
     debugArena(type) { start(type); },

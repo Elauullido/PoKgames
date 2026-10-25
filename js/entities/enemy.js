@@ -753,10 +753,10 @@
       if (alpha <= 0) return;
 
       const gold = this.golden || this.behavior === 'thief' || (this.remote && !this.boss && G.Events.golden);
-      if ((this.boss || this.shiny || gold || this.glitched) && !this.dead) {
+      if ((this.boss || this.shiny || gold || this.glitched || this.mummy || this.halloween || this.pharaoh) && !this.dead) {
         ctx.save();
         ctx.globalAlpha = (this.glitched ? 0.38 : gold && !this.boss ? 0.32 : 0.22) + Math.sin(this.bob * 0.5) * 0.06;
-        ctx.fillStyle = this.glitched ? (Math.sin(this.bob * 2) > 0 ? '#42fff0' : '#ff4bc8') : this.ai && this.ai.fury ? '#ff4a4a' : this.shiny ? '#9ae6ff' : gold ? '#ffd23f' : '#ffd95e';
+        ctx.fillStyle = this.glitched ? (Math.sin(this.bob * 2) > 0 ? '#42fff0' : '#ff4bc8') : this.pharaoh || this.mummy ? '#d8af57' : this.halloween ? '#ff7838' : this.ai && this.ai.fury ? '#ff4a4a' : this.shiny ? '#9ae6ff' : gold ? '#ffd23f' : '#ffd95e';
         ctx.beginPath(); ctx.ellipse(this.x, this.y, this.r * 1.6, this.r * 0.6, 0, 0, 6.2832); ctx.fill();
         ctx.restore();
       }
@@ -768,6 +768,8 @@
       // (Y los que saltan, en arco.)
       const lift = (this.flying && !this.boss ? 1 + Math.sin(this.bob) * 1.5 : 0) + (this.jumpLift || 0);
       if (this.glitched) ctx.filter = 'hue-rotate(' + Math.round(Math.sin(this.bob * 1.8) * 90) + 'deg) saturate(1.8)';
+      else if (this.mummy || this.pharaoh) ctx.filter = 'sepia(.9) saturate(1.7) hue-rotate(350deg)';
+      else if (this.halloween) ctx.filter = 'hue-rotate(-35deg) saturate(1.8)';
       this.anim.draw(ctx, this.x, this.y - lift, { flash: this.flash > 0, alpha });
       ctx.restore();
 
@@ -861,6 +863,10 @@
       e.remote = true;
       e.glitched = !!o.glitched;
       if (e.glitched) e.name = 'GLITCHED ' + e.name;
+      e.mummy = !!o.mummy; e.halloween = !!o.halloween; e.pharaoh = !!o.pharaoh;
+      if (e.pharaoh) e.name = 'FARAÓN ' + e.name;
+      else if (e.mummy) e.name = 'MOMIA ' + e.name;
+      else if (e.halloween) e.name = 'CALABAZA ' + e.name;
       if (o.shiny) e.makeShiny();
       e.maxHp = o.hp; e.hp = o.hp;
       if (o.beh === 'arceus') G.Judgment.dress(e);

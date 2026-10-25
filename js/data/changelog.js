@@ -6,7 +6,9 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
-  { d: '2026-10-25', title: ['Grieta Glitcheada', 'Glitched Rift'], new: [
+  { d: '2026-10-25', title: ['Grietas: Laberinto Glitcheado y Puerta Abismal', 'Rifts: Glitched Labyrinth and Abyssal Door'], new: [
+    ['Nueva Puerta Abismal: entra en una tumba enorme, sobrevive a oleadas de momias y Pokémon de Halloween y derrota al Faraón Cofagrigus.',
+     'New Abyssal Door: enter a huge tomb, survive waves of mummies and Halloween Pokémon, and defeat Pharaoh Cofagrigus.'],
     ['El panel Admin ahora permite aprender y mejorar ataques, aumentar el daño y combinar los movimientos que elijas.',
      'The Admin panel now lets you learn and upgrade moves, increase damage, and combine the moves you choose.'],
     ['Panel Admin durante la partida: invoca Pokémon y abre grietas normales o glitcheadas. En cooperativo, solo el anfitrión puede hacerlo.',

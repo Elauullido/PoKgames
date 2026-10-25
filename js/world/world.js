@@ -68,6 +68,7 @@ G.World = (() => {
   function arenaSafe(tx, ty) {
     const lx = tx - arena.tx, ly = ty - arena.ty;
     if (arena.layout === 'glitch') return glitchFloor(lx, ly) && !glitchDoor(lx, ly, arena.dungeon && arena.dungeon.open);
+    if (arena.layout === 'pharaoh') return pharaohFloor(lx, ly);
     return (Math.abs(lx) <= 2 && ly >= -6 && ly <= 5) || Math.hypot(lx, ly) < 2.5 ||
            (arena.th.clear > 0 && Math.hypot(lx, ly + 5) < arena.th.clear);
   }
@@ -83,12 +84,20 @@ G.World = (() => {
       box(x,y,-2,2,-18,-16);
   }
   function glitchDoor(x, y, open) { return !open && x >= -2 && x <= 2 && y === -18; }
+  function pharaohFloor(x, y) {
+    const box = (x, y, x1, x2, y1, y2) => x >= x1 && x <= x2 && y >= y1 && y <= y2;
+    return box(x,y,-7,7,26,36) || box(x,y,-3,3,-38,27) ||
+      box(x,y,-9,-2,8,15) || box(x,y,-23,-9,2,22) || box(x,y,-7,-2,-5,4) ||
+      box(x,y,2,10,-10,-3) || box(x,y,10,25,-24,-5) || box(x,y,2,7,-29,-23) ||
+      box(x,y,-10,10,-42,-36) || box(x,y,-17,17,-54,-40);
+  }
 
   function terrainRaw(tx, ty) {
     const ad = arenaDist(tx, ty);
     if (ad < arena_outer()) {
       if (ad >= arena.r) return WALL;
       if (arena.layout === 'glitch') return glitchFloor(tx - arena.tx, ty - arena.ty) && !glitchDoor(tx - arena.tx, ty - arena.ty, arena.dungeon && arena.dungeon.open) ? FLOOR : WALL;
+      if (arena.layout === 'pharaoh') return pharaohFloor(tx - arena.tx, ty - arena.ty) ? FLOOR : WALL;
       if (arenaSafe(tx, ty)) return FLOOR;
       const th = arena.th;
       // Columnas de 2×2 (cobertura) y charcos según el tipo de la arena.

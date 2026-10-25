@@ -386,7 +386,7 @@ G.Rift = (() => {
         if (Math.random() < 0.3) G.FX.px(rift.x + G.U.rand(-14, 14), rift.y - G.U.rand(10, 80), rift.kind === 'glitch' ? '#42fff0' : '#d9c2ff', { vy: -40, life: 0.6 });
       }});
     if (arena && arena.glitch) {
-      const ts = TS(), points = [...GLYPHS.map((p,i)=>({p,i})), ...NODES.map((p,i)=>({p,i:i+3}))];
+      const ts = TS(), points = [...GLYPHS.map((p,i)=>({p,i})), ...NODES.map((p,i)=>({p,i}))];
       points.forEach((q,i) => out.push({ y: arena.y + q.p[1] * ts, draw(ctx) {
         const x = arena.x + q.p[0] * ts, y = arena.y + q.p[1] * ts, on = i < 3 ? !!arena.dungeon.a : !!arena.dungeon.b;
         const glyphs = ['◇','△','○'];

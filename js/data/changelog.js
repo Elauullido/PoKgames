@@ -13,6 +13,9 @@ G.CHANGELOG = [
      'A rare turquoise rift leads to a labyrinth with glitched Pokémon, two puzzles in separate rooms, and a door that opens once both are solved to reach the boss.'],
     ['Menú Códigos: canjea Pokémonedas, tickets, Pokémon, shinies, objetos y MT. Hay un código Admin exclusivo de la cuenta administradora.',
      'Codes menu: redeem PokéCoins, tickets, Pokémon, shinies, items and TMs. An Admin code is reserved for the administrator account.']
+  ], fix: [
+    ['Los nodos de colores del puzzle derecho de la grieta glitcheada ahora se muestran correctamente.',
+     'The colored nodes in the glitched rift’s right-hand puzzle now display correctly.']
   ] },
   { d: '2026-10-23', title: ['Ranking de daño a Arceus y Tablas', 'Arceus damage ranking and Plates'], new: [
     ["Botón de YouTube arriba, junto a Novedades: lleva al canal del juego y, cuando hay directo, se pone rojo con «EN DIRECTO» y te lleva a verlo.",

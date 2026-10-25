@@ -20,6 +20,7 @@ G.Player = class Player {
     this.bodyH = G.Sprites.bodyHeight(mon.dex, this.scale);
 
     this.atkMul = perks.atkMul || 1;
+    this.adminDamageMul = 1;
     this.spdMul = perks.spdMul || 1;
     this.cdMul = perks.cdMul || 1;
     this.dmgReduce = perks.dmgReduce || 0;
@@ -108,7 +109,7 @@ G.Player = class Player {
    */
   atkFor(m) {
     const cat = m && m.cat, b = cat === 'physical' ? this.buffs.patk : cat === 'special' ? this.buffs.satk : null;
-    return this.atk * G.Stats.fit(this.mon, cat) * (b ? 1 + b.n * b.amount : 1) * (m && this.monoType(m.type) ? Player.MONO_K : 1);
+    return this.atk * this.adminDamageMul * (m && m.adminDamageMul || 1) * G.Stats.fit(this.mon, cat) * (b ? 1 + b.n * b.amount : 1) * (m && this.monoType(m.type) ? Player.MONO_K : 1);
   }
   /** Monotipo (19-10-2026): los de un solo tipo pegan un +20 % con los ataques de su tipo (tienen menos variedad). */
   static get MONO_K() { return 1.2; }
@@ -217,6 +218,19 @@ G.Player = class Player {
     this.bonds = Math.max(0, this.bonds - 1);
     G.Projectiles.clearOrbs(this);
     return target;
+  }
+
+  /** Fusión gratuita para el panel Admin: une los dos huecos que contienen esos movimientos. */
+  adminFuseMoves(a, b) {
+    if (!G.CodesUI || !G.CodesUI.adminMode || !a || !b || a === b) return false;
+    const target = this.slots.find(s => s.includes(a)), source = this.slots.find(s => s.includes(b));
+    if (!target || !source || target === source) return false;
+    target.push(...source);
+    this.slots.splice(this.slots.indexOf(source), 1);
+    this.arrange();
+    this.active = this.slots.indexOf(target);
+    G.Projectiles.clearOrbs(this);
+    return true;
   }
 
   /** Movimientos que se lanzan ahora (el grupo del hueco activo). */

@@ -3,7 +3,7 @@
  */
 G.HUD = (() => {
   const F = (w, s) => `${w} ${s}px Pixelify,"Segoe UI",system-ui,sans-serif`;
-  let adminOpen = false, adminDex = 24;
+  let adminOpen = false, adminDex = 24, adminMoveIndex = 0, adminFuseA = 0, adminFuseB = 1;
 
   function adminButton(ctx, x, y, w, h, label, onClick, color = '#46e6d2') {
     roundRect(ctx, x, y, w, h, 7);
@@ -20,7 +20,7 @@ G.HUD = (() => {
     const bx = G.U.clamp(w - 112, 5, w - 78), by = 58;
     adminButton(ctx, bx, by, 68, 29, '⚙ ADMIN', () => { adminOpen = !adminOpen; });
     if (!adminOpen) return;
-    const pw = Math.min(300, w - 20), ph = 190, px = (w - pw) / 2, py = Math.max(92, (h - ph) / 2);
+    const pw = Math.min(340, w - 20), ph = 322, px = (w - pw) / 2, py = G.U.clamp((h - ph) / 2, 8, Math.max(8, h - ph - 8));
     roundRect(ctx, px, py, pw, ph, 12);
     ctx.fillStyle = 'rgba(8,13,25,.96)'; ctx.fill();
     ctx.lineWidth = 2; ctx.strokeStyle = '#46e6d2'; ctx.stroke();
@@ -36,14 +36,53 @@ G.HUD = (() => {
     ctx.fillStyle = '#fff'; ctx.font = F(800, 11);
     ctx.fillText('#' + mon.dex + ' ' + mon.name, w / 2, py + 66);
     adminButton(ctx, px + pw - 54, py + 48, 42, 27, '▶', () => { adminDex = mons[(mi + 1) % mons.length].dex; });
-    const disabled = !canSpawn || G.Rift.inArena || G.Judgment.active;
-    if (disabled) ctx.globalAlpha = 0.45;
-    adminButton(ctx, px + 12, py + 83, (pw - 30) / 2, 29, 'Invocar ×1', () => { if (!disabled) G.Spawner.adminSpawn(adminDex, 1); });
-    adminButton(ctx, px + 18 + (pw - 30) / 2, py + 83, (pw - 30) / 2, 29, 'Invocar ×5', () => { if (!disabled) G.Spawner.adminSpawn(adminDex, 5); });
-    adminButton(ctx, px + 12, py + 121, (pw - 30) / 2, 29, 'Grieta normal', () => { if (!disabled && !G.Rift.rift) G.Rift.adminOpen('normal'); }, '#b48aff');
-    adminButton(ctx, px + 18 + (pw - 30) / 2, py + 121, (pw - 30) / 2, 29, 'Grieta glitch', () => { if (!disabled && !G.Rift.rift) G.Rift.adminOpen('glitch'); }, '#42fff0');
+    const blocked = !canSpawn || G.Rift.inArena || G.Judgment.active;
+    if (blocked) ctx.globalAlpha = 0.45;
+    adminButton(ctx, px + 12, py + 83, (pw - 30) / 2, 27, 'Invocar ×1', () => { if (!blocked) G.Spawner.adminSpawn(adminDex, 1); });
+    adminButton(ctx, px + 18 + (pw - 30) / 2, py + 83, (pw - 30) / 2, 27, 'Invocar ×5', () => { if (!blocked) G.Spawner.adminSpawn(adminDex, 5); });
     ctx.globalAlpha = 1;
-    adminButton(ctx, px + pw - 76, py + 158, 64, 25, 'Cerrar', () => { adminOpen = false; }, '#8495ae');
+
+    const skills = G.Moves.ALL.filter(m => m && m.id);
+    if (adminMoveIndex >= skills.length) adminMoveIndex = 0;
+    const skill = skills[adminMoveIndex];
+    adminButton(ctx, px + 12, py + 116, 34, 25, '◀', () => { adminMoveIndex = (adminMoveIndex - 1 + skills.length) % skills.length; });
+    ctx.fillStyle = '#fff'; ctx.font = F(800, 10);
+    ctx.fillText(skill ? G.T(skill.name, 'move') : '—', w / 2, py + 133);
+    adminButton(ctx, px + pw - 46, py + 116, 34, 25, '▶', () => { adminMoveIndex = (adminMoveIndex + 1) % skills.length; });
+    adminButton(ctx, px + 12, py + 147, (pw - 30) / 2, 27, 'Aprender ataque', () => {
+      const pl = G.Game.player;
+      if (skill && pl && !pl.hasMove(skill.id) && pl.addMove(skill.id)) G.Spawner.say('Ataque aprendido: ' + G.T(skill.name, 'move'), 2.4, true);
+      else G.Spawner.say('Ya lo tienes o no queda un hueco libre; combina ataques primero', 2.8, true);
+    });
+    const m = G.Game.player.activeMove();
+    adminButton(ctx, px + 18 + (pw - 30) / 2, py + 147, (pw - 30) / 2, 27, m ? 'Mejorar Nv.' + m.lvl : 'Sin ataques', () => {
+      if (!m) return;
+      if (!G.Moves.levelUp(m)) {
+        const info = G.Moves.evoInfo(m, G.Game.player.statsTaken);
+        if (!info || !G.Moves.evolve(m)) { G.Spawner.say('Este ataque ya está al máximo', 2, true); return; }
+        G.Spawner.say('¡' + m.name + ' evolucionó!', 2.4, true);
+      } else G.Spawner.say('¡' + m.name + ' subió a nivel ' + m.lvl + '!', 2.2, true);
+    });
+    adminButton(ctx, px + 12, py + 180, (pw - 30) / 2, 27, 'Daño ataque +50%', () => { if (m) m.adminDamageMul = Math.min(1e6, (m.adminDamageMul || 1) * 1.5); });
+    adminButton(ctx, px + 18 + (pw - 30) / 2, py + 180, (pw - 30) / 2, 27, 'Daño total ×2', () => { G.Game.player.adminDamageMul = Math.min(1e6, G.Game.player.adminDamageMul * 2); });
+
+    const pick = (ix) => learned.length ? learned[((ix % learned.length) + learned.length) % learned.length] : null;
+    const a = pick(adminFuseA), b = pick(adminFuseB);
+    const row = (y, label, move, left, right) => {
+      adminButton(ctx, px + 12, y, 30, 24, '◀', left);
+      ctx.fillStyle = '#dce7f5'; ctx.font = F(600, 9);
+      ctx.fillText(label + ': ' + (move ? G.T(move.name, 'move') : '—'), w / 2, y + 16);
+      adminButton(ctx, px + pw - 42, y, 30, 24, '▶', right);
+    };
+    row(py + 213, 'A', a, () => { if (learned.length) adminFuseA = (adminFuseA - 1 + learned.length) % learned.length; }, () => { if (learned.length) adminFuseA = (adminFuseA + 1) % learned.length; });
+    row(py + 241, 'B', b, () => { if (learned.length) adminFuseB = (adminFuseB - 1 + learned.length) % learned.length; }, () => { if (learned.length) adminFuseB = (adminFuseB + 1) % learned.length; });
+    adminButton(ctx, px + 12, py + 270, (pw - 30) / 2, 25, 'Combinar A + B', () => {
+      if (G.Game.player.adminFuseMoves(a, b)) G.Spawner.say('¡Ataques combinados en un solo hueco!', 2.6, true);
+      else G.Spawner.say('Elige dos ataques que estén en huecos distintos', 2.4, true);
+    }, '#ffcf62');
+    adminButton(ctx, px + 18 + (pw - 30) / 2, py + 270, (pw - 30) / 2, 25, 'Grieta normal', () => { if (!blocked && !G.Rift.rift) G.Rift.adminOpen('normal'); }, '#b48aff');
+    adminButton(ctx, px + 12, py + 297, (pw - 30) / 2, 22, 'Grieta glitch', () => { if (!blocked && !G.Rift.rift) G.Rift.adminOpen('glitch'); }, '#42fff0');
+    adminButton(ctx, px + pw - 76, py + 297, 64, 22, 'Cerrar', () => { adminOpen = false; }, '#8495ae');
   }
 
   /** Cartel encima de una esfera: su nombre y, con el ratón encima, también lo que hace. */

@@ -7,6 +7,8 @@
  */
 G.CHANGELOG = [
   { d: '2026-10-25', title: ['Grieta Glitcheada', 'Glitched Rift'], new: [
+    ['El panel Admin ahora permite aprender y mejorar ataques, aumentar el daño y combinar los movimientos que elijas.',
+     'The Admin panel now lets you learn and upgrade moves, increase damage, and combine the moves you choose.'],
     ['Panel Admin durante la partida: invoca Pokémon y abre grietas normales o glitcheadas. En cooperativo, solo el anfitrión puede hacerlo.',
      'In-game Admin panel: spawn Pokémon and open normal or glitched rifts. In co-op, only the host can do this.'],
     ['Una grieta poco común y turquesa lleva a un laberinto con Pokémon glitcheados, dos puzles en salas separadas y una puerta que se abre al resolverlos para llegar al jefe.',

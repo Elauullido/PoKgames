@@ -10,7 +10,7 @@ G.MenuUI = (() => {
   const SORTS = [['num', 'Nº'], ['name', 'Nombre'], ['rar', 'Rareza'], ['new', 'Recién conseguidos'], ['used', 'Más usados']];
 
   function init() {
-    const ICON = { play: 'ball', dex: 'book', upgrades: 'up', shop: 'shop', bag: 'bag', gacha: 'ball4', codes: 'ticket', goals: 'medal3', friends: 'friends', rank: 'trophy', settings: 'gear' };
+    const ICON = { play: 'ball', dex: 'book', upgrades: 'up', shop: 'shop', bag: 'bag', gacha: 'ball4', codes: 'ticket', goals: 'medal3', friends: 'friends', trade: 'friends', rank: 'trophy', settings: 'gear' };
     document.querySelectorAll('#scr-menu [data-go]').forEach(b => {
       b.insertAdjacentHTML('afterbegin', `<span class="mi-ico">${G.Icons.html(ICON[b.dataset.go], 26)}</span>`);
       b.dataset.sfx = b.dataset.go === 'play' ? 'confirm' : 'click';
@@ -25,6 +25,13 @@ G.MenuUI = (() => {
         else if (go === 'codes') G.CodesUI.open();
         else if (go === 'goals') G.GoalsUI.open();
         else if (go === 'friends') G.FriendsUI.open();
+        else if (go === 'trade') {
+          if (!G.TradeUI || typeof G.TradeUI.open !== 'function') {
+            G.UI.toast('El sistema de intercambios no está disponible.');
+            return;
+          }
+          G.TradeUI.open();
+        }
         else if (go === 'rank') G.RankingUI.open();
         else if (go === 'settings') G.SettingsUI.open();
       };

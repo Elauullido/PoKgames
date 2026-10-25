@@ -272,6 +272,18 @@ label { display: block; font-size: 14px; color: var(--muted); margin: 8px 0 4px;
 
 /* ---------- menú principal ---------- */
 #scr-menu { justify-content: space-between; align-items: stretch; padding: 0; }
+#scr-menu.halloween-menu {
+  background:
+    radial-gradient(ellipse at 20% 76%, rgba(255,127,29,.22), transparent 36%),
+    radial-gradient(ellipse at 72% 17%, rgba(138,64,133,.19), transparent 30%),
+    linear-gradient(140deg, #17111c 0%, #271827 46%, #121321 100%);
+}
+#scr-menu.halloween-menu .logo .t1 { color: #ffb13b; text-shadow: 3px 3px 0 #8b351c, 6px 6px 0 #100d16; }
+#scr-menu.halloween-menu .logo .t2 { color: #e3a7d4; }
+#scr-menu.halloween-menu .menu-right { background: linear-gradient(90deg, transparent, rgba(12,8,20,.78) 30%); }
+#scr-menu.halloween-menu .menu-right > .box { border-color: #ca784b; box-shadow: 0 0 0 2px #3e2030, 0 5px 0 #170e1b; }
+#scr-menu.halloween-menu .menu-item.play { color: #ffad32; }
+#scr-menu.halloween-menu .menu-item:hover, #scr-menu.halloween-menu .menu-item:focus-visible { background: rgba(255,139,45,.13); }
 .menu-left {
   flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;
   padding: 30px; min-width: 0;
@@ -933,6 +945,14 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
 .news-btn.new .dot { display: block; }
 .box.news-box { width: min(640px, 100%); max-height: calc(100dvh - 90px); display: flex; flex-direction: column; }
 .news-body { overflow-y: auto; padding-right: 4px; }
+.news-admin { flex: 0 0 auto; max-height: 48dvh; overflow-y: auto; margin: 8px 0; padding: 12px; border: 1px solid rgba(255,203,61,.35); border-radius: 12px; background: rgba(0,0,0,.2); }
+.news-admin-form { display: grid; gap: 8px; margin: 10px 0; }
+.news-admin-form label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
+.news-admin-form textarea { width: 100%; resize: vertical; }
+.news-admin-list { display: grid; gap: 6px; margin-top: 8px; }
+.news-admin-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 8px; border-radius: 8px; background: rgba(255,255,255,.045); }
+.news-admin-row small { display: block; color: var(--muted); }
+.news-admin-row .row { gap: 5px; flex-wrap: nowrap; }
 .news-day { padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,.1); }
 .news-day:last-child { border-bottom: 0; }
 .news-day h3 { color: var(--gold); margin: 14px 0 6px; font-size: 18px; }

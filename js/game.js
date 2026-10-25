@@ -911,7 +911,7 @@ G.Game = (() => {
       G.Camera.follow(G.Camera.x, G.Camera.y, dt);
 
       biomeT += dt;
-      if (biomeT > 30) { biomeT = 0; bi = (bi + 1) % 3; G.World.setBiome(bi); }
+      if (biomeT > 30) { biomeT = 0; bi = (bi + 1) % G.Tiles.NORMAL; G.World.setBiome(bi); }
 
       for (const wd of wanderers) {
         wd.t -= dt;

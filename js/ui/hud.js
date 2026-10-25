@@ -20,7 +20,7 @@ G.HUD = (() => {
     const bx = G.U.clamp(w - 112, 5, w - 78), by = 58;
     adminButton(ctx, bx, by, 68, 29, '⚙ ADMIN', () => { adminOpen = !adminOpen; });
     if (!adminOpen) return;
-    const pw = Math.min(340, w - 20), ph = 354, px = (w - pw) / 2, py = G.U.clamp((h - ph) / 2, 8, Math.max(8, h - ph - 8));
+    const pw = Math.min(340, w - 20), ph = 382, px = (w - pw) / 2, py = G.U.clamp((h - ph) / 2, 8, Math.max(8, h - ph - 8));
     roundRect(ctx, px, py, pw, ph, 12);
     ctx.fillStyle = 'rgba(8,13,25,.96)'; ctx.fill();
     ctx.lineWidth = 2; ctx.strokeStyle = '#46e6d2'; ctx.stroke();
@@ -85,7 +85,13 @@ G.HUD = (() => {
     adminButton(ctx, px + 12, py + 300, rw, 25, 'Grieta normal', () => { if (!blocked && !G.Rift.rift) G.Rift.adminOpen('normal'); }, '#b48aff');
     adminButton(ctx, px + 18 + rw, py + 300, rw, 25, 'Glitcheada', () => { if (!blocked && !G.Rift.rift) G.Rift.adminOpen('glitch'); }, '#42fff0');
     adminButton(ctx, px + 24 + rw * 2, py + 300, rw, 25, 'Abismal', () => { if (!blocked && !G.Rift.rift) G.Rift.adminOpen('abyss'); }, '#ff9b38');
-    adminButton(ctx, px + pw - 76, py + 329, 64, 22, 'Cerrar', () => { adminOpen = false; }, '#8495ae');
+    adminButton(ctx, px + 12, py + 329, pw - 96, 23, 'Quitar multiplicadores Admin', () => {
+      const player = G.Game.player;
+      player.adminDamageMul = 1;
+      for (const move of player.moves) move.adminDamageMul = 1;
+      G.Spawner.say('Se quitaron los multiplicadores de daño del Admin.', 2.5, true);
+    }, '#f29a8b');
+    adminButton(ctx, px + pw - 76, py + 329, 64, 23, 'Cerrar', () => { adminOpen = false; }, '#8495ae');
   }
 
   /** Cartel encima de una esfera: su nombre y, con el ratón encima, también lo que hace. */

@@ -37,11 +37,12 @@ G.Weather = (() => {
   const FROM = 120, CHECK = 60, CHANCE = 0.18;
 
   let cur = null;           // { kind, t, dur }
-  let checkT = CHECK, chipT = 0;
+  let checkT = CHECK, chipT = 0, gustCheck = 0, gustLeft = 0;
   let parts = [];
+  let gustParts = [];
   const authority = () => !G.Coop.active || G.Coop.isHost;
 
-  function reset() { cur = null; checkT = CHECK; chipT = 0; parts = []; }
+  function reset() { cur = null; checkT = CHECK; chipT = 0; gustCheck = 0; gustLeft = 0; parts = []; gustParts = []; }
 
   function def() { return cur ? KINDS[cur.kind] : null; }
 
@@ -90,6 +91,18 @@ G.Weather = (() => {
   }
 
   function update(dt, time, pl) {
+    const tomb = !!(G.Rift && G.Rift.arena && G.Rift.arena.pharaoh);
+    if (tomb) {
+      if (gustLeft > 0) gustLeft = Math.max(0, gustLeft - dt);
+      else {
+        gustCheck -= dt;
+        if (gustCheck <= 0) {
+          gustLeft = G.U.rand(4.5, 7);
+          gustCheck = G.U.rand(17, 29);
+          if (authority()) G.Spawner.say('¡Un viento de arena atraviesa la tumba!', 2.8, true);
+        }
+      }
+    } else { gustCheck = 0; gustLeft = 0; gustParts.length = 0; }
     if (cur) {
       cur.t += dt;
       if (cur.t >= cur.dur) cur = null;
@@ -134,6 +147,24 @@ G.Weather = (() => {
 
   /** Partículas suaves y un tinte leve. Se llama después de dibujar el mundo. */
   function draw(ctx, w, h, dt) {
+    const tomb = !!(G.Rift && G.Rift.arena && G.Rift.arena.pharaoh);
+    if (tomb) {
+      ctx.fillStyle = 'rgba(199,154,83,.12)'; ctx.fillRect(0, 0, w, h);
+      if (gustLeft > 0) {
+        ctx.fillStyle = 'rgba(190,139,64,.19)'; ctx.fillRect(0, 0, w, h);
+        const want = Math.min(100, Math.round(w / 10));
+        while (gustParts.length < want) gustParts.push(spawnGust(w, h, true));
+        if (gustParts.length > want + 8) gustParts.length = want;
+        const s = Math.max(2, Math.round(w / 640));
+        for (let i = gustParts.length - 1; i >= 0; i--) {
+          const p = gustParts[i]; p.x += p.vx * dt; p.y += p.vy * dt; p.t += dt;
+          if (p.x < -30 || p.x > w + 30 || p.t > p.life) { gustParts[i] = spawnGust(w, h, false); continue; }
+          ctx.globalAlpha = p.a * Math.min(1, gustLeft / 0.6); ctx.fillStyle = p.c;
+          ctx.fillRect(Math.round(p.x), Math.round(p.y), s * 4, Math.max(1, s * 0.6));
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
     const d = def();
     const k = level();
     if (!d || k <= 0) { parts.length = 0; return; }
@@ -156,6 +187,12 @@ G.Weather = (() => {
       else ctx.fillRect(Math.round(p.x), Math.round(p.y), s, s);
     }
     ctx.globalAlpha = 1;
+  }
+
+  function spawnGust(w, h, anywhere) {
+    return { x: anywhere ? Math.random() * w : w + 20, y: Math.random() * h,
+      vx: -G.U.rand(280, 520), vy: G.U.rand(-14, 14), a: G.U.rand(0.18, 0.5),
+      c: Math.random() < 0.5 ? '#e8cf9c' : '#c9a36c', t: 0, life: 5 };
   }
 
   function spawn(w, h, anywhere) {

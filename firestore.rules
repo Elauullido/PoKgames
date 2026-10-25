@@ -16,6 +16,20 @@ service cloud.firestore {
 
     function signedIn() { return request.auth != null; }
     function me() { return request.auth.uid; }
+    // Publica novedades sólo la cuenta Admin verificada; el feed es de lectura pública.
+    function newsAdmin() {
+      return signedIn() && request.auth.token.email == 'elauullido@gmail.com'
+        && request.auth.token.email_verified == true;
+    }
+    function validAnnouncement(d) {
+      return d.keys().hasOnly(['titleEs', 'titleEn', 'bodyEs', 'bodyEn', 'date', 'createdAt', 'updatedAt'])
+        && d.get('titleEs', '') is string && d.titleEs.size() > 0 && d.titleEs.size() <= 100
+        && d.get('titleEn', '') is string && d.titleEn.size() > 0 && d.titleEn.size() <= 100
+        && d.get('bodyEs', '') is string && d.bodyEs.size() > 0 && d.bodyEs.size() <= 2400
+        && d.get('bodyEn', '') is string && d.bodyEn.size() > 0 && d.bodyEn.size() <= 2400
+        && d.get('date', '') is string && d.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && d.get('createdAt', null) is timestamp && d.get('updatedAt', null) is timestamp;
+    }
     // Moderación (pantalla oculta del juego, js/ui/mod-ui.js): sólo esta cuenta.
     function admin() { return signedIn() && me() in ['rshaa5gKD3fXw6lE4PPXITbowaG2']; }
     // Tope de escrituras (20-10-2026): un documento no se puede volver a escribir
@@ -289,6 +303,18 @@ service cloud.firestore {
     // Para borrar todas tus marcas al borrar la cuenta (consulta de grupo).
     match /{path=**}/e/{id} {
       allow read: if signedIn();
+    }
+
+    // Novedades públicas editables desde la cuenta Admin verificada.
+    match /announcements/{id} {
+      allow get: if true;
+      allow list: if request.query.limit <= 50;
+      allow create: if newsAdmin() && validAnnouncement(request.resource.data)
+        && request.resource.data.createdAt == request.time && request.resource.data.updatedAt == request.time;
+      allow update: if newsAdmin() && validAnnouncement(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if newsAdmin();
     }
 
     match /{document=**} {

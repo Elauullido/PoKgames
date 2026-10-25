@@ -199,6 +199,14 @@ G.Enemies = (() => {
     return G.U.pickN(pool, 4).map(p => defFor(p, TIERS[ti], ti));
   }
 
+  /** Pokémon fantasma y con forma de calabaza para el bosque otoñal. */
+  function halloweenBag(t) {
+    const ti = tierAt(t), pumpkins = new Set([710, 711, 778]);
+    const pool = G.DEX.filter(p => !p.leg && p.rarity < 5 && G.SPRITE_META[p.dex]
+      && (p.types.includes('ghost') || pumpkins.has(p.dex)));
+    return pool.map(p => defFor(p, TIERS[ti], ti));
+  }
+
   /** Bolsa de enemigos disponibles en el segundo `t`. */
   function bagAt(t) {
     // Durante una horda de un tipo sólo salen los de ese tipo (systems/events.js).
@@ -224,7 +232,7 @@ G.Enemies = (() => {
   }
 
   return {
-    TIERS, BOSS_SLOTS, rollRun, scale, bossScale, tierAt, bagAt, upcomingDex, candidates, hordeTypes, hordeDefs, defFor,
+    TIERS, BOSS_SLOTS, rollRun, scale, bossScale, tierAt, bagAt, halloweenBag, upcomingDex, candidates, hordeTypes, hordeDefs, defFor,
     get BOSSES() { if (!bosses) rollRun(); return bosses; },
     get cast() { if (!cast) rollRun(); return cast; }
   };

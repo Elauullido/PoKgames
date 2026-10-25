@@ -97,7 +97,8 @@ G.Spawner = (() => {
   }
 
   function spawnOne(pl, t, angle) {
-    const bag = G.Enemies.bagAt(t);
+    const seasonal = G.Tiles.BIOMES[G.World.biome].seasonal;
+    const bag = seasonal ? G.Enemies.halloweenBag(t) : G.Enemies.bagAt(t);
     let def = G.U.pick(bag);
     if (SUPPORT.has(def.behavior)) {
       const full = supportFull();
@@ -111,6 +112,7 @@ G.Spawner = (() => {
     if (!pt) return null;
     const shiny = rollShiny(def.dex);
     const e = new G.Enemy(def, pt[0], pt[1], scaled(G.Enemies.scale(t), G.Coop.scaleHp(players.length) * hpK(t)));
+    if (seasonal) e.halloween = true;
     e.dmg *= DMG_K; e.xp = Math.round(e.xp * XP_K);
     if (G.EnemyMgr.count >= CAP * ELITE_FROM) { e.maxHp = e.hp = Math.round(e.maxHp * 1.6); e.dmg *= 1.25; e.xp = Math.round(e.xp * 1.6); }
     if (shiny) e.makeShiny();

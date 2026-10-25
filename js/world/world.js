@@ -177,9 +177,10 @@ G.World = (() => {
         kind = Math.floor(H(tx, ty, seed + 910) * (type === 'altar' ? 4 : 3));
       }
       if (type) { /* ya elegido */ }
-      else if (open && h < (grove ? 0.07 : 0.006)) type = 'tree';
+      else if (open && G.Tiles.BIOMES[biome].seasonal && H(tx, ty, seed + 711) < 0.018) type = 'pumpkin';
+      else if (open && h < (G.Tiles.BIOMES[biome].seasonal ? (grove ? 0.12 : 0.025) : (grove ? 0.07 : 0.006))) type = 'tree';
       else if (open && h > 0.992) type = 'rock';
-      else if (open && h > 0.985 && h <= 0.992 && H(tx, ty, seed + 606) < 0.07) type = 'chest';
+      else if (open && h > (G.Tiles.BIOMES[biome].seasonal ? 0.972 : 0.985) && h <= 0.992 && H(tx, ty, seed + 606) < (G.Tiles.BIOMES[biome].seasonal ? 0.34 : 0.07)) type = 'chest';
       else if (fbm(tx / 5, ty / 5, seed + 707) > 0.66 && H(tx, ty, seed + 808) < 0.75) type = 'grass';
       if (!type) continue;
 
@@ -193,6 +194,7 @@ G.World = (() => {
     tree:  { solid: true,  hp: Infinity, r: 13 },
     rock:  { solid: true,  hp: 34,       r: 12 },
     chest: { solid: true,  hp: 22,       r: 12 },
+    pumpkin: { solid: false, hp: Infinity, r: 9 },
     grass: { solid: false, hp: 1,        r: 14 },
     altar:    { solid: true,  hp: Infinity, r: 9 },
     spring:   { solid: false, hp: Infinity, r: 22, flat: true },

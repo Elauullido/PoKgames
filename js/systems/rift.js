@@ -505,6 +505,7 @@ G.Rift = (() => {
     get rift() { return rift; }, get arena() { return arena; },
     get inArena() { return !!arena; },
     get timeLeft() { return arena ? Math.max(0, (arena.pharaoh ? 600 : arena.glitch ? 300 : ARENA_TIME) - arena.t) : 0; },
+    get xpMultiplier() { return arena && arena.pharaoh ? 0.28 : arena && arena.glitch ? 0.45 : 1; },
     debugOpen() { open(); }, adminOpen,
     /** Para pruebas: arena de un tipo ya. */
     debugArena(type) { start(type); },

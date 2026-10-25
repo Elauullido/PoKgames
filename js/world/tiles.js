@@ -34,9 +34,17 @@ G.Tiles = (() => {
       liq: '#e45a1f', liqDeep: '#b9401a', foam: '#ffd46a', shore: '#3a2a22',
       prop: 'dead', leaf: ['#4a3a30', '#5e4a3c', '#6f5a49', '#806a58'], trunk: ['#3a2e27', '#52423a'],
       rock: ['#4e4642', '#6a605b', '#877c76'], grass: ['#6b4a2a', '#94693a', '#c4914e'] },
+    { name: 'Bosque de Halloween', liquid: 'water', seasonal: true,
+      floor: ['#9a562d', '#ad6332', '#874526'], dirt: ['#62402c', '#71472d', '#583723'],
+      speck: '#65381f', light: '#e7953d', flowers: ['#f3a333', '#d7512e', '#8b58a6'],
+      wallTop: ['#61442f', '#755037', '#573b2b'], wallLight: '#a87545', wallEdge: '#38261d',
+      wallFace: ['#503728', '#63432c'], wallFaceDark: '#302219',
+      liq: '#526348', liqDeep: '#384b35', foam: '#a0a96b', shore: '#583a25',
+      prop: 'tree', leaf: ['#c65322', '#e07724', '#f0a331', '#8c3e2d'], trunk: ['#4d3022', '#68432a'],
+      rock: ['#594638', '#806043', '#a1784b'], grass: ['#a85a27', '#d47b2b', '#eda53e'] },
   ];
-  const NORMAL = 3;                   // biomas que se van turnando en una run
-  const ARENA = 3;                    // a partir de aquí, las arenas de la grieta (una por tipo)
+  const NORMAL = 4;                   // biomas que se van turnando en una run
+  const ARENA = 4;                    // a partir de aquí, las arenas de la grieta (una por tipo)
 
   // ---------------- arenas de la grieta ----------------
   /*
@@ -111,8 +119,8 @@ G.Tiles = (() => {
     glitch:   { name: 'Labyrinth Glitcheado', floor: '#25364a', wall: '#111b2c', liquid: 'water', liq: '#24e5dc', foam: '#d2fffb', prop: 'crystal',
                 leaf: '#35e8dc', trunk: '#16253a', flowers: ['#43fff0', '#ff4bc8', '#fff06a'], grass: '#24a9b8', rock: '#55758a',
                 pools: 0, pillars: 0, props: {}, weather: null },
-    pharaoh: { name: 'Tumba del Faraón', floor: '#9a7843', wall: '#38291e', liquid: 'water', liq: '#514437', foam: '#d7bd82', prop: 'dead',
-                leaf: '#8b7746', trunk: '#392a1c', flowers: ['#d6a84b', '#705333', '#c7ad78'], grass: '#a8874c', rock: '#756044',
+    pharaoh: { name: 'Tumba del Faraón', floor: '#b3915d', wall: '#a8793d', liquid: 'water', liq: '#66513a', foam: '#e4c98d', prop: 'dead', brick: true,
+                leaf: '#9a7b48', trunk: '#5d4328', flowers: ['#d6a84b', '#8c673a', '#e2c78b'], grass: '#b39861', rock: '#927148',
                 pools: 0, pillars: 0, props: {}, weather: 'fog' }
   };
   const ARENA_TYPES = Object.keys(ARENA_THEMES);
@@ -132,6 +140,7 @@ G.Tiles = (() => {
       speck: shade(f, -0.25), light: shade(f, 0.22), flowers: th.flowers,
       wallTop: [w, shade(w, 0.07), shade(w, -0.07)], wallLight: shade(w, 0.32), wallEdge: shade(w, -0.7),
       wallFace: [shade(w, -0.3), shade(w, -0.38)], wallFaceDark: shade(w, -0.55),
+      brick: !!th.brick,
       liq: L, liqDeep: shade(L, -0.22), foam: th.foam || shade(L, 0.55), shore: shade(f, -0.32),
       prop: th.prop, leaf: [shade(th.leaf, -0.35), shade(th.leaf, -0.15), th.leaf, shade(th.leaf, 0.3)],
       trunk: [shade(th.trunk, -0.2), th.trunk],
@@ -301,16 +310,25 @@ G.Tiles = (() => {
         const gx = tx * T + x, gy = ty * T + y;
         let col;
         if (y >= T - FACE) {
-          // Cara frontal: vetas verticales y base oscura.
+          // Cara frontal: los muros de la tumba muestran bloques de arenisca.
           const fy = y - (T - FACE);
-          col = C.wallFace[(x + (H(gx, 0, 21) < 0.5 ? 0 : 1)) % 3 === 0 ? 1 : 0];
-          if (fy === 0) col = C.wallEdge;
-          else if (y === T - 1) col = C.wallFaceDark;
-          else if (H(gx, gy, 22) < 0.08) col = C.wallFaceDark;
+          if (C.brick) {
+            const row = Math.floor(fy / 3), localY = fy % 3;
+            const seamX = ((row & 1) ? (x + 4) : x) % 8;
+            col = C.wallFace[(row + Math.floor(x / 8)) % C.wallFace.length];
+            if (localY === 0 || seamX === 0) col = C.wallEdge;
+            else if (H(gx, gy, 22) < 0.04) col = C.wallLight;
+          } else {
+            col = C.wallFace[(x + (H(gx, 0, 21) < 0.5 ? 0 : 1)) % 3 === 0 ? 1 : 0];
+            if (fy === 0) col = C.wallEdge;
+            else if (y === T - 1) col = C.wallFaceDark;
+            else if (H(gx, gy, 22) < 0.08) col = C.wallFaceDark;
+          }
         } else {
-          // Cara superior con tramado.
+          // Cara superior con juntas en los muros de ladrillo.
           col = C.wallTop[Math.floor(H(gx >> 1, gy >> 1, 23) * 2.2 + H(gx, gy, 24) * 0.8) % C.wallTop.length];
           if (H(gx, gy, 25) < 0.05) col = C.wallLight;
+          if (C.brick && (y % 4 === 0 || ((Math.floor(y / 4) & 1) ? x % 8 === 4 : x % 8 === 0))) col = C.wallEdge;
           // Bordes: luz al norte, contorno oscuro a los lados.
           if (!n && y === 0) col = C.wallEdge;
           else if (!n && y === 1) col = C.wallLight;
@@ -413,6 +431,19 @@ G.Tiles = (() => {
         });
       }
       outline(P, edge);
+      return P.canvas();
+    },
+
+    pumpkin() {
+      const P = Pix(20, 18), orange = pack('#e87922'), light = pack('#ffae36'), dark = pack('#9c3d1f'), green = pack('#71843b');
+      disc(P, 10, 11, 7.2, (x, y, d) => d < 0.2 ? light : d > 0.78 ? dark : orange);
+      disc(P, 6, 11, 4.2, (x, y, d) => d < 0.35 ? light : orange);
+      disc(P, 14, 11, 4.2, (x, y, d) => d < 0.35 ? light : orange);
+      P.set(9, 4, green); P.set(10, 3, green); P.set(10, 2, pack('#91a64b'));
+      for (const x of [7, 12]) { P.set(x, 9, pack('#2d1d20')); P.set(x, 10, pack('#2d1d20')); }
+      for (let x = 8; x <= 11; x++) P.set(x, 13, pack('#422322'));
+      P.set(9, 12, pack('#422322')); P.set(11, 12, pack('#422322'));
+      outline(P, pack('#45241d'));
       return P.canvas();
     },
 
@@ -612,10 +643,11 @@ G.Tiles = (() => {
       return P.canvas();
     },
 
-    chest() {
+    chest(B) {
       const P = Pix(16, 14);
-      const gold = pack('#f2c443'), goldD = pack('#b5832a'), wood = pack('#8a4f2a'), woodD = pack('#5e3418');
-      const lid = pack('#c4662e');
+      const spooky = !!B.seasonal;
+      const gold = pack(spooky ? '#9e5bc2' : '#f2c443'), goldD = pack(spooky ? '#623375' : '#b5832a'), wood = pack(spooky ? '#633522' : '#8a4f2a'), woodD = pack('#3d251d');
+      const lid = pack(spooky ? '#ed7926' : '#c4662e');
       for (let y = 2; y < 13; y++) for (let x = 1; x < 15; x++) {
         let c = y < 6 ? lid : wood;
         if (y === 6) c = goldD;
@@ -624,7 +656,7 @@ G.Tiles = (() => {
         if (y === 12) c = woodD;
         P.set(x, y, c);
       }
-      for (let x = 6; x < 10; x++) for (let y = 5; y < 9; y++) P.set(x, y, (x + y) % 3 ? gold : goldD);
+      for (let x = 6; x < 10; x++) for (let y = 5; y < 9; y++) P.set(x, y, spooky ? ((x === 7 || x === 8) && y >= 6 && y <= 7 ? pack('#f3a333') : goldD) : (x + y) % 3 ? gold : goldD);
       outline(P, pack('#2a160a'));
       return P.canvas();
     }

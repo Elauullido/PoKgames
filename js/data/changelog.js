@@ -7,19 +7,21 @@
  */
 G.CHANGELOG = [
   { d: '2026-10-25', title: ['Grietas: Laberinto Glitcheado y Puerta Abismal', 'Rifts: Glitched Labyrinth and Abyssal Door'], new: [
+    ['El menú principal ahora tiene un ambiente especial de Halloween.',
+     'The main menu now has a special Halloween look.'],
+    ['Nuevo Bosque de Halloween: un bioma otoñal naranja con árboles de colores, calabazas, cofres temáticos y Pokémon fantasma y de terror.',
+     'New Halloween Forest: an orange autumn biome with colorful trees, pumpkins, themed chests, and spooky Ghost-type Pokémon.'],
     ['Nueva Puerta Abismal: entra en una tumba enorme, sobrevive a oleadas de momias y Pokémon de Halloween y derrota al Faraón Cofagrigus.',
      'New Abyssal Door: enter a huge tomb, survive waves of mummies and Halloween Pokémon, and defeat Pharaoh Cofagrigus.'],
-    ['El panel Admin ahora permite aprender y mejorar ataques, aumentar el daño y combinar los movimientos que elijas.',
-     'The Admin panel now lets you learn and upgrade moves, increase damage, and combine the moves you choose.'],
-    ['Panel Admin durante la partida: invoca Pokémon y abre grietas normales o glitcheadas. En cooperativo, solo el anfitrión puede hacerlo.',
-     'In-game Admin panel: spawn Pokémon and open normal or glitched rifts. In co-op, only the host can do this.'],
+    ['La cripta ahora tiene muros de ladrillos de arenisca, neblina más arenosa y ráfagas ocasionales de viento con arena.',
+     'The crypt now has sandstone brick walls, sandier haze, and occasional gusts of blowing sand.'],
+    ['Subir de nivel con experiencia es más lento en la cripta y en el laberinto glitcheado.',
+     'Leveling up with experience is slower in the crypt and the glitched labyrinth.'],
     ['Una grieta poco común y turquesa lleva a un laberinto con Pokémon glitcheados, dos puzles en salas separadas y una puerta que se abre al resolverlos para llegar al jefe.',
      'A rare turquoise rift leads to a labyrinth with glitched Pokémon, two puzzles in separate rooms, and a door that opens once both are solved to reach the boss.'],
-    ['Menú Códigos: canjea Pokémonedas, tickets, Pokémon, shinies, objetos y MT. Hay un código Admin exclusivo de la cuenta administradora.',
-     'Codes menu: redeem PokéCoins, tickets, Pokémon, shinies, items and TMs. An Admin code is reserved for the administrator account.']
+    ['Menú Códigos: canjea Pokémonedas, tickets, Pokémon, shinies, objetos y MT.',
+     'Codes menu: redeem PokéCoins, tickets, Pokémon, shinies, items and TMs.']
   ], fix: [
-    ['El panel Admin ya no provoca que la partida se cierre al abrir las opciones de combinación.',
-     'The Admin panel no longer ends the run when opening its fusion options.'],
     ['Los nodos de colores del puzzle derecho de la grieta glitcheada ahora se muestran correctamente.',
      'The colored nodes in the glitched rift’s right-hand puzzle now display correctly.']
   ] },

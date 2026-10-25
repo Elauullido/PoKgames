@@ -66,6 +66,7 @@ G.HUD = (() => {
     adminButton(ctx, px + 12, py + 180, (pw - 30) / 2, 27, 'Daño ataque +50%', () => { if (m) m.adminDamageMul = Math.min(1e6, (m.adminDamageMul || 1) * 1.5); });
     adminButton(ctx, px + 18 + (pw - 30) / 2, py + 180, (pw - 30) / 2, 27, 'Daño total ×2', () => { G.Game.player.adminDamageMul = Math.min(1e6, G.Game.player.adminDamageMul * 2); });
 
+    const learned = G.Game.player.moves;
     const pick = (ix) => learned.length ? learned[((ix % learned.length) + learned.length) % learned.length] : null;
     const a = pick(adminFuseA), b = pick(adminFuseB);
     const row = (y, label, move, left, right) => {

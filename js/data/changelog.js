@@ -16,6 +16,8 @@ G.CHANGELOG = [
     ['Menú Códigos: canjea Pokémonedas, tickets, Pokémon, shinies, objetos y MT. Hay un código Admin exclusivo de la cuenta administradora.',
      'Codes menu: redeem PokéCoins, tickets, Pokémon, shinies, items and TMs. An Admin code is reserved for the administrator account.']
   ], fix: [
+    ['El panel Admin ya no provoca que la partida se cierre al abrir las opciones de combinación.',
+     'The Admin panel no longer ends the run when opening its fusion options.'],
     ['Los nodos de colores del puzzle derecho de la grieta glitcheada ahora se muestran correctamente.',
      'The colored nodes in the glitched rift’s right-hand puzzle now display correctly.']
   ] },

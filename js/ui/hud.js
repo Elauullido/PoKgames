@@ -3,6 +3,48 @@
  */
 G.HUD = (() => {
   const F = (w, s) => `${w} ${s}px Pixelify,"Segoe UI",system-ui,sans-serif`;
+  let adminOpen = false, adminDex = 24;
+
+  function adminButton(ctx, x, y, w, h, label, onClick, color = '#46e6d2') {
+    roundRect(ctx, x, y, w, h, 7);
+    ctx.fillStyle = 'rgba(19,29,48,.96)'; ctx.fill();
+    ctx.lineWidth = 1.5; ctx.strokeStyle = color; ctx.stroke();
+    ctx.fillStyle = '#f4f8ff'; ctx.font = F(800, 11); ctx.textAlign = 'center';
+    ctx.fillText(label, x + w / 2, y + h / 2 + 4);
+    G.Touch.addButton(x, y, w, h, onClick, 9);
+  }
+
+  function drawAdmin(ctx, w, h) {
+    if (!G.CodesUI || !G.CodesUI.adminMode || G.Game.state !== 'playing') { adminOpen = false; return; }
+    const canSpawn = !G.Coop.active || G.Coop.isHost;
+    const bx = G.U.clamp(w - 112, 5, w - 78), by = 58;
+    adminButton(ctx, bx, by, 68, 29, '⚙ ADMIN', () => { adminOpen = !adminOpen; });
+    if (!adminOpen) return;
+    const pw = Math.min(300, w - 20), ph = 190, px = (w - pw) / 2, py = Math.max(92, (h - ph) / 2);
+    roundRect(ctx, px, py, pw, ph, 12);
+    ctx.fillStyle = 'rgba(8,13,25,.96)'; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = '#46e6d2'; ctx.stroke();
+    ctx.textAlign = 'center'; ctx.fillStyle = '#46e6d2'; ctx.font = F(800, 14);
+    ctx.fillText('PANEL ADMIN', w / 2, py + 21);
+    ctx.fillStyle = '#dce7f5'; ctx.font = F(600, 10);
+    if (!canSpawn) ctx.fillText('Solo el anfitrión puede invocar en cooperativo', w / 2, py + 39);
+    const mons = G.DEX.filter(p => G.SPRITE_META[p.dex]);
+    let mi = mons.findIndex(p => p.dex === adminDex);
+    if (mi < 0) mi = 0;
+    const mon = mons[mi]; adminDex = mon.dex;
+    adminButton(ctx, px + 12, py + 48, 42, 27, '◀', () => { adminDex = mons[(mi - 1 + mons.length) % mons.length].dex; });
+    ctx.fillStyle = '#fff'; ctx.font = F(800, 11);
+    ctx.fillText('#' + mon.dex + ' ' + mon.name, w / 2, py + 66);
+    adminButton(ctx, px + pw - 54, py + 48, 42, 27, '▶', () => { adminDex = mons[(mi + 1) % mons.length].dex; });
+    const disabled = !canSpawn || G.Rift.inArena || G.Judgment.active;
+    if (disabled) ctx.globalAlpha = 0.45;
+    adminButton(ctx, px + 12, py + 83, (pw - 30) / 2, 29, 'Invocar ×1', () => { if (!disabled) G.Spawner.adminSpawn(adminDex, 1); });
+    adminButton(ctx, px + 18 + (pw - 30) / 2, py + 83, (pw - 30) / 2, 29, 'Invocar ×5', () => { if (!disabled) G.Spawner.adminSpawn(adminDex, 5); });
+    adminButton(ctx, px + 12, py + 121, (pw - 30) / 2, 29, 'Grieta normal', () => { if (!disabled && !G.Rift.rift) G.Rift.adminOpen('normal'); }, '#b48aff');
+    adminButton(ctx, px + 18 + (pw - 30) / 2, py + 121, (pw - 30) / 2, 29, 'Grieta glitch', () => { if (!disabled && !G.Rift.rift) G.Rift.adminOpen('glitch'); }, '#42fff0');
+    ctx.globalAlpha = 1;
+    adminButton(ctx, px + pw - 76, py + 158, 64, 25, 'Cerrar', () => { adminOpen = false; }, '#8495ae');
+  }
 
   /** Cartel encima de una esfera: su nombre y, con el ratón encima, también lo que hace. */
   function orbTip(ctx, id, cx, by, full, w) {
@@ -457,6 +499,9 @@ G.HUD = (() => {
         ctx.fillText(Math.ceil(ob[id]) + 's', bx + 12, by + 35);
       });
     }
+
+    // ---------- controles Admin (solo cuenta habilitada y partida activa) ----------
+    drawAdmin(ctx, w, h);
 
     // ---------- botón de pausa (táctil) ----------
     if (touch) {

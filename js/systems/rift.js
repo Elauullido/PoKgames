@@ -77,6 +77,24 @@ G.Rift = (() => {
     }
   }
 
+  /** Crea una grieta a poca distancia para que el Admin pueda entrar enseguida. */
+  function adminOpen(kind = 'normal') {
+    if (!G.CodesUI || !G.CodesUI.adminMode || !authority() || arena) return false;
+    const pl = G.Game.player;
+    if (!pl || pl.dead) return false;
+    for (let i = 0; i < 32; i++) {
+      const a = i * 2.399963, d = 130 + (i % 4) * 18;
+      const x = pl.x + Math.cos(a) * d, y = pl.y + Math.sin(a) * d * 0.85;
+      if (G.World.isFree(x, y, 22)) {
+        show(x, y, TTL, kind === 'glitch' ? 'glitch' : 'normal');
+        if (G.Coop.isHost) G.Coop.broadcast(['rift', Math.round(x), Math.round(y), TTL, rift.kind]);
+        G.Spawner.say(rift.kind === 'glitch' ? '¡Grieta glitcheada invocada!' : '¡Grieta invocada!', 2.4, true);
+        return true;
+      }
+    }
+    return false;
+  }
+
   /** Aparece la grieta (también la que manda el anfitrión). */
   function show(x, y, ttl, kind = 'normal') {
     rift = { x, y, ttl, t: 0, kind };
@@ -407,7 +425,7 @@ G.Rift = (() => {
     get rift() { return rift; }, get arena() { return arena; },
     get inArena() { return !!arena; },
     get timeLeft() { return arena ? Math.max(0, (arena.glitch ? 300 : ARENA_TIME) - arena.t) : 0; },
-    debugOpen() { open(); },
+    debugOpen() { open(); }, adminOpen,
     /** Para pruebas: arena de un tipo ya. */
     debugArena(type) { start(type); },
     /** Para vídeos: la próxima grieta en la que entres será de este tipo. */

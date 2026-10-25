@@ -181,6 +181,33 @@ G.Spawner = (() => {
     for (let i = 0; i < n && G.EnemyMgr.count < CAP + 10; i++) spawnOne(target, t, base + G.U.rand(-0.6, 0.6));
   }
 
+  /** Invocación desde el panel Admin. Solo la autoridad del mundo crea enemigos. */
+  function adminSpawn(dex, count = 1) {
+    if (!G.CodesUI || !G.CodesUI.adminMode || (G.Coop.active && !G.Coop.isHost)) return 0;
+    const pl = G.Game.player;
+    const mon = G.DEX_BY[dex];
+    if (!pl || pl.dead || !mon || !G.SPRITE_META[dex] || G.Rift.inArena || G.Judgment.active) return 0;
+    players = G.Game.everyone().filter(p => !p.dead);
+    if (!players.length) players = [pl];
+    const t = G.Game.st.time, ti = G.Enemies.tierAt(t), tier = G.Enemies.TIERS[ti];
+    const def = G.Enemies.defFor(mon, tier, ti);
+    const sc = scaled(G.Enemies.scale(t), G.Coop.scaleHp(players.length) * hpK(t));
+    let made = 0;
+    for (let i = 0; i < Math.min(10, Math.max(1, count)); i++) {
+      const a = Math.random() * 6.2832, d = G.U.rand(78, 128);
+      let pt = null;
+      for (let j = 0; j < 12; j++) {
+        const aa = a + j * 0.52, x = pl.x + Math.cos(aa) * d, y = pl.y + Math.sin(aa) * d * 0.9;
+        if (G.Sprites.hovers(dex) || G.World.isFree(x, y, 14)) { pt = [x, y]; break; }
+      }
+      if (!pt) continue;
+      const e = new G.Enemy(def, pt[0], pt[1], sc);
+      G.EnemyMgr.add(e); made++;
+    }
+    if (made) say('¡' + made + ' Pokémon invocado' + (made === 1 ? '' : 's') + '!', 2.2);
+    return made;
+  }
+
   /**
    * Un rezagado vuelve a salir por delante del jugador (hacia donde corre),
    * fuera de la vista. Devuelve false si no hay sitio (entonces se quita).
@@ -208,6 +235,6 @@ G.Spawner = (() => {
   /** Invitado en cooperativo: sólo corre el reloj del aviso. */
   function tickBanner(dt) { if (announceT > 0) announceT -= dt; }
 
-  return { reset, update, ahead, burst, tickBanner, banner, say, rate, SHINY_RATE, CAP,
+  return { reset, update, ahead, burst, adminSpawn, tickBanner, banner, say, rate, SHINY_RATE, CAP,
            debugForceShiny(n = 1) { forceShiny = n; } };
 })();

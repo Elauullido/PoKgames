@@ -7,6 +7,8 @@
  */
 G.CHANGELOG = [
   { d: '2026-10-25', title: ['Grieta Glitcheada', 'Glitched Rift'], new: [
+    ['Panel Admin durante la partida: invoca Pokémon y abre grietas normales o glitcheadas. En cooperativo, solo el anfitrión puede hacerlo.',
+     'In-game Admin panel: spawn Pokémon and open normal or glitched rifts. In co-op, only the host can do this.'],
     ['Una grieta poco común y turquesa lleva a un laberinto con Pokémon glitcheados, dos puzles en salas separadas y una puerta que se abre al resolverlos para llegar al jefe.',
      'A rare turquoise rift leads to a labyrinth with glitched Pokémon, two puzzles in separate rooms, and a door that opens once both are solved to reach the boss.'],
     ['Menú Códigos: canjea Pokémonedas, tickets, Pokémon, shinies, objetos y MT. Hay un código Admin exclusivo de la cuenta administradora.',

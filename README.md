@@ -1,4 +1,4 @@
-# PokéSurvivor · Mundo Misterioso
+# PoKgame · Mundo Misterioso
 
 Bullet-heaven con Pokémon al estilo de Survivor.io y Megabonk, con sprites de
 *Pokémon Mundo Misterioso*, capa roguelike, **966 Pokémon de las 9 generaciones**,

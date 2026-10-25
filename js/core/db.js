@@ -942,6 +942,100 @@ const HOSTS = ['pokesurvivor.com', 'www.pokesurvivor.com', 'jpter78.github.io', 
     } catch (e) { return { ok: false, error: authError(e) }; }
   }
 
+  // ---------------- intercambios por nombre de usuario ----------------
+
+  /**
+   * Busca una cuenta por nombre visible usando el índice público:
+   * playerNames/{nombreNormalizado} -> { uid, name }.
+   * El índice debe crearse/validarse desde backend al registrar o cambiar nombre.
+   */
+  async function findTradePlayer(name) {
+    const wanted = String(name || '').trim();
+    if (!wanted) return { ok: false, error: 'Escribe el nombre del entrenador.' };
+    if (!online || !fs || !uid) return { ok: false, error: 'Inicia sesión con una cuenta online para intercambiar.' };
+    if (wanted.length > 32) return { ok: false, error: 'El nombre es demasiado largo.' };
+    try {
+      const normalized = wanted.toLocaleLowerCase('es').normalize('NFC');
+      const snap = await fs.collection('playerNames').doc(normalized).get();
+      if (!snap.exists) return { ok: false, error: 'No se encontró ese entrenador.' };
+      const profile = snap.data() || {};
+      if (!profile.uid || !profile.name) return { ok: false, error: 'El perfil de ese entrenador no está configurado para intercambios.' };
+      if (profile.uid === uid) return { ok: false, error: 'No puedes intercambiar contigo mismo.' };
+      return { ok: true, player: { uid: profile.uid, name: String(profile.name).slice(0, 32) } };
+    } catch (e) {
+      console.warn('[DB] búsqueda de entrenador fallida:', e.code || e.message);
+      return { ok: false, error: 'No se pudo buscar al entrenador. Revisa la conexión y las reglas de Firebase.' };
+    }
+  }
+
+  /**
+   * Crea una solicitud pendiente de intercambio por nombre de usuario.
+   * No mueve Pokémon ni Coins en el cliente: la aceptación y transferencia
+   * deben ejecutarse en una Cloud Function transaccional con validación server-side.
+   * Esquema RTDB: tradeRequests/{targetUid}/{requestId}.
+   */
+  async function requestTrade(targetName) {
+    const found = await findTradePlayer(targetName);
+    if (!found.ok) return found;
+    if (!rtdb) return { ok: false, error: 'Los intercambios necesitan Firebase Realtime Database (databaseURL).' };
+    try {
+      const requestId = fs.collection('_tradeRequestIds').doc().id;
+      const request = {
+        id: requestId,
+        fromUid: uid,
+        fromName: String(user || save.name || 'Entrenador').slice(0, 32),
+        toUid: found.player.uid,
+        toName: found.player.name,
+        status: 'pending',
+        createdAt: Date.now(),
+        // Oferta inicial vacía. La UI podrá rellenar offeredCoins/offeredPokemon.
+        offeredCoins: 0,
+        offeredPokemon: [],
+        requestedCoins: 0,
+        requestedPokemon: []
+      };
+      await rtdb.ref('tradeRequests/' + found.player.uid + '/' + requestId).set(request);
+      return { ok: true, request };
+    } catch (e) {
+      console.warn('[DB] no se pudo crear la solicitud:', e.code || e.message);
+      return { ok: false, error: 'No se pudo enviar la solicitud. Revisa las reglas de Firebase.' };
+    }
+  }
+
+  /** Lista solicitudes recibidas (requiere reglas RTDB que permitan al usuario leer su rama). */
+  async function getTradeRequests() {
+    if (!online || !rtdb || !uid) return { ok: false, error: 'Inicia sesión online y configura Firebase Realtime Database.' };
+    try {
+      const snap = await rtdb.ref('tradeRequests/' + uid).get();
+      const requests = [];
+      snap.forEach(child => { requests.push(child.val()); });
+      return { ok: true, requests };
+    } catch (e) {
+      console.warn('[DB] no se pudieron leer solicitudes:', e.code || e.message);
+      return { ok: false, error: 'No se pudieron cargar las solicitudes. Revisa las reglas de Firebase.' };
+    }
+  }
+
+  /** Cancela una solicitud propia pendiente; no acepta ni ejecuta intercambios. */
+  async function cancelTradeRequest(requestId) {
+    if (!online || !rtdb || !uid) return { ok: false, error: 'Inicia sesión online para cancelar solicitudes.' };
+    const id = String(requestId || '');
+    if (!/^[A-Za-z0-9_-]{1,128}$/.test(id)) return { ok: false, error: 'ID de solicitud no válido.' };
+    try {
+      const ref = rtdb.ref('tradeRequests/' + uid + '/' + id);
+      const snap = await ref.get();
+      if (!snap.exists()) return { ok: false, error: 'La solicitud ya no existe.' };
+      const req = snap.val() || {};
+      if (req.fromUid !== uid) return { ok: false, error: 'Solo quien envió la solicitud puede cancelarla.' };
+      if (req.status !== 'pending') return { ok: false, error: 'Solo se pueden cancelar solicitudes pendientes.' };
+      await ref.update({ status: 'cancelled', cancelledAt: Date.now() });
+      return { ok: true };
+    } catch (e) {
+      console.warn('[DB] no se pudo cancelar la solicitud:', e.code || e.message);
+      return { ok: false, error: 'No se pudo cancelar. Revisa las reglas de Firebase.' };
+    }
+  }
+
   // ---------------- helpers de partida ----------------
 
   function owns(dex) { return !!(save && save.owned[dex]); }
@@ -979,6 +1073,7 @@ const HOSTS = ['pokesurvivor.com', 'www.pokesurvivor.com', 'jpter78.github.io', 
   return {
     ready, register, login, loginWithGoogle, playAsGuest, logout, commit, deleteAccount, flush: pushNow, saveNow,
     owns, grant, ownsShiny, grantShiny, merge, setName, upgradesOf, isFav, setFav,
+    findTradePlayer, requestTrade, getTradeRequests, cancelTradeRequest,
     onSync(fn) { listeners.add(fn); },
     onLeave(fn) { leaveHooks.push(fn); },
     /** Acceso de bajo nivel para los módulos de red (sólo en modo nube). */

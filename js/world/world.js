@@ -86,6 +86,19 @@ G.World = (() => {
   function glitchDoor(x, y, open) { return !open && x >= -2 && x <= 2 && y === -18; }
   function pharaohFloor(x, y) {
     const box = (x, y, x1, x2, y1, y2) => x >= x1 && x <= x2 && y >= y1 && y <= y2;
+
+    // El diseño puede llegar desde systems/rift.js como arena.rooms.
+    // Cada sala/pasillo es { x1, x2, y1, y2 } en tiles relativos al centro.
+    // Así todos los clientes usan exactamente el mismo mapa recibido por red.
+    const rooms = arena && Array.isArray(arena.rooms) ? arena.rooms : null;
+    if (rooms && rooms.length) {
+      for (const room of rooms) {
+        if (room && box(x, y, room.x1, room.x2, room.y1, room.y2)) return true;
+      }
+      return false;
+    }
+
+    // Compatibilidad con arenas antiguas que todavía no envían salas aleatorias.
     return box(x,y,-7,7,26,36) || box(x,y,-3,3,-38,27) ||
       box(x,y,-9,-2,8,15) || box(x,y,-23,-9,2,22) || box(x,y,-7,-2,-5,4) ||
       box(x,y,2,10,-10,-3) || box(x,y,10,25,-24,-5) || box(x,y,2,7,-29,-23) ||

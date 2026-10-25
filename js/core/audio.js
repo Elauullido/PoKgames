@@ -1,7 +1,5 @@
-from pathlib import Path
 
-p = Path("/mnt/data/core_audio.js")
-p.write_text("""/* ============ audio.js — sintetizador, secuenciador y efectos de sonido ============
+/* ============ audio.js — sintetizador, secuenciador y efectos de sonido ============
  * Todo el sonido se genera en el momento con Web Audio: no hay ficheros.
  *
  *   G.Audio.music('village')   cambia de tema con fundido (ver data/music.js)
@@ -220,14 +218,14 @@ G.Audio = (() => {
 
   const NOTE = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
   function midiOf(name) {
-    const m = /^([A-G])(#|b)?(-?\\d)$/.exec(name);
+    const m = /^([A-G])(#|b)?(-?\d)$/.exec(name);
     if (!m) return null;
     return 12 * (+m[3] + 1) + NOTE[m[1]] + (m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0);
   }
 
   /** Acorde "F", "Dm", "C/E", "F#m"... -> { root (0-11), minor, bass (0-11) } */
   function parseChord(c) {
-    const m = /^([A-G])(#|b)?(m?)(?:\\/([A-G])(#|b)?)?$/.exec(c);
+    const m = /^([A-G])(#|b)?(m?)(?:\/([A-G])(#|b)?)?$/.exec(c);
     const pc = (l, a) => (NOTE[l] + (a === '#' ? 1 : a === 'b' ? -1 : 0) + 12) % 12;
     const root = pc(m[1], m[2]);
     return { root, minor: m[3] === 'm', bass: m[4] ? pc(m[4], m[5]) : root };
@@ -245,7 +243,7 @@ G.Audio = (() => {
     for (const tr of song.melody || []) {
       tr.bars.forEach((bar, bi) => {
         let s = 0;
-        for (const tok of bar.trim().split(/\\s+/)) {
+        for (const tok of bar.trim().split(/\s+/)) {
           const [n, len] = tok.split(':');
           const L = +len || 1;
           if (n !== '-') {
@@ -540,5 +538,3 @@ G.Audio = (() => {
     get track() { return current && current.name; }
   };
 })();
-""", encoding="utf-8")
-print(f"Creado: {p} ({p.stat().st_size} bytes)")

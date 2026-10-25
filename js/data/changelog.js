@@ -8,7 +8,9 @@
 G.CHANGELOG = [
   { d: '2026-10-25', title: ['Grieta Glitcheada', 'Glitched Rift'], new: [
     ['Una grieta poco común y turquesa lleva a un laberinto con Pokémon glitcheados, dos puzles en salas separadas y una puerta que se abre al resolverlos para llegar al jefe.',
-     'A rare turquoise rift leads to a labyrinth with glitched Pokémon, two puzzles in separate rooms, and a door that opens once both are solved to reach the boss.']
+     'A rare turquoise rift leads to a labyrinth with glitched Pokémon, two puzzles in separate rooms, and a door that opens once both are solved to reach the boss.'],
+    ['Menú Códigos: canjea Pokémonedas, tickets, Pokémon, shinies, objetos y MT. Hay un código Admin exclusivo de la cuenta administradora.',
+     'Codes menu: redeem PokéCoins, tickets, Pokémon, shinies, items and TMs. An Admin code is reserved for the administrator account.']
   ] },
   { d: '2026-10-23', title: ['Ranking de daño a Arceus y Tablas', 'Arceus damage ranking and Plates'], new: [
     ["Botón de YouTube arriba, junto a Novedades: lleva al canal del juego y, cuando hay directo, se pone rojo con «EN DIRECTO» y te lleva a verlo.",

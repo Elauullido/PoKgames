@@ -92,6 +92,7 @@ G.DB = (() => {
       pnat: {},               // dex -> [naturaleza, fecha]: la cambiada con Menta (si no, la que le tocó)
       pabil: {},              // dex -> [0|1|2, fecha]: la habilidad cambiada con Cápsula (2 = oculta)
       tickets: { t1: 0, t10: 0 },   // tickets del gacha (x1 y x10)
+      codesRedeemed: [],            // códigos promocionales ya usados por esta cuenta
       pity: {},               // generación del banner -> tiradas sin ★5
       legends: {},            // dex -> fecha: legendarios vencidos en grietas
       arenas: {},             // tipo -> fecha: arenas de grieta ganadas
@@ -120,6 +121,7 @@ G.DB = (() => {
       s.pupgDone = true;
     }
     s.tickets = Object.assign({ t1: 0, t10: 0 }, s.tickets);
+    s.codesRedeemed = Array.isArray(s.codesRedeemed) ? [...new Set(s.codesRedeemed.filter(c => typeof c === 'string').map(c => c.slice(0, 80)))].slice(-500) : [];
     sanitize(s);
     s.v = VERSION;
     return s;
@@ -313,6 +315,7 @@ G.DB = (() => {
     }
     r.led = led;
     r.tickets = r.tickets || { t1: 0, t10: 0 };
+    r.codesRedeemed = [...new Set([...(a.codesRedeemed || []), ...(b.codesRedeemed || [])])].slice(-500);
     r.bag = {}; r.tms = {};
     for (const k of curKeys({ bag: {}, tms: {} }, led)) curSet(r, k, Math.max(0, ledSum(led, k)));
     // MT aprendidas: nunca se olvidan (unión). Naturaleza y habilidad: la elegida más tarde.

@@ -257,6 +257,7 @@ G.Player = class Player {
    */
   /** @param cat  'physical' | 'special': con qué defensa tuya se para (la del enemigo que pega). */
   hurt(amount, type = null, pure = false, cat = null) {
+    if (G.CodesUI && G.CodesUI.adminMode && this === G.Game.player) return;
     if (this.invuln > 0 || this.dead) return;
     // Habilidad (data/ability-fx.js): absorber un tipo, esquivar o recibir menos.
     const ab = this.abil, cls = cat === 'physical' ? 'p' : cat === 'special' ? 's' : '';
@@ -374,6 +375,8 @@ G.Player = class Player {
   update(dt) {
     this.anim.update(dt);
     if (this.dead) return;
+    const god = G.CodesUI && G.CodesUI.adminMode && this === G.Game.player;
+    if (god) { this.hp = this.maxHp; this.invuln = Math.max(this.invuln, 0.2); }
     if (this.invuln > 0) this.invuln -= dt;
     if (this.flash > 0) this.flash -= dt;
     if (this.attackFace > 0) this.attackFace -= dt;
@@ -386,7 +389,7 @@ G.Player = class Player {
     if (this.bellHeal > 0) { const h = Math.min(this.bellHeal, 4 * dt); this.hp = Math.min(this.maxHp, this.hp + h); this.bellHeal -= h; }
     if (this.power && (this.power.t -= dt) <= 0) { this.power.def.off(this); this.power = null; }
     if (this.regen > 0) this.hp = Math.min(this.maxHp, this.hp + this.regen * dt);
-    if (this.abil && this.abil.tick) this.abil.tick(this, dt);
+    if (!god && this.abil && this.abil.tick) this.abil.tick(this, dt);
     // Sequía, Llovizna...: su clima al empezar y cada 3 min, si no hay otro (en
     // grupo lo pone el anfitrión, que es quien manda el clima a todos).
     if (this.abil && this.abil.summon && (!G.Coop.active || G.Coop.isHost) && (this.sumT = (this.sumT || 0) - dt) <= 0) {

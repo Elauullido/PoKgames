@@ -30,6 +30,7 @@ G.Shop = (() => {
   function take(id) {
     const s = save();
     if (!count(id)) return false;
+    if (G.CodesUI && G.CodesUI.adminMode) return true;
     if (--s.bag[id] <= 0) delete s.bag[id];
     return true;
   }
@@ -37,6 +38,7 @@ G.Shop = (() => {
   function takeTm(id) {
     const s = save();
     if (!tmCount(id)) return false;
+    if (G.CodesUI && G.CodesUI.adminMode) return true;
     if (--s.tms[id] <= 0) delete s.tms[id];
     return true;
   }
@@ -78,8 +80,9 @@ G.Shop = (() => {
     if (tm && !dailyTms().includes(tm)) return { ok: false, error: 'Esa MT ya no está a la venta.' };
     if (!tm && !ITEMS[key]) return { ok: false };
     const price = tm ? tmPrice(tm) : ITEMS[key].price;
-    if (s.coins < price) return { ok: false, error: 'No tienes Pokémonedas suficientes.' };
-    s.coins -= price;
+    const admin = G.CodesUI && G.CodesUI.adminMode;
+    if (!admin && s.coins < price) return { ok: false, error: 'No tienes Pokémonedas suficientes.' };
+    if (!admin) s.coins -= price;
     if (tm) { s.tms = s.tms || {}; s.tms[tm] = Math.min(999, (s.tms[tm] || 0) + 1); }
     else { s.bag = s.bag || {}; s.bag[key] = Math.min(999, (s.bag[key] || 0) + 1); }
     G.DB.commit();

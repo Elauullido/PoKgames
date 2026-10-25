@@ -16,6 +16,7 @@ G.FIREBASE_CONFIG = {
   authDomain: "pokgames-d05a0.firebaseapp.com",
   projectId: "pokgames-d05a0",
   storageBucket: "pokgames-d05a0.firebasestorage.app",
+  databaseURL: "https://pokgames-d05a0-default-rtdb.europe-west1.firebasedatabase.app",
   messagingSenderId: "1059671520439",
   appId: "1:1059671520439:web:2eb10dc15388b046184932",
   measurementId: "G-K7PL4014JH"

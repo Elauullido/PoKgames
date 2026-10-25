@@ -38,8 +38,9 @@ navegador.
 1. **Compilación → Realtime Database** → **Crear base de datos** → ubicación
    **Bélgica (europe-west1)** → modo bloqueado.
 2. Pestaña **Reglas**: pega el contenido de [`database.rules.json`](../database.rules.json).
-3. Copia la URL que sale arriba (`https://...firebasedatabase.app`) y añádela a
-   `firebase-config.js` como `databaseURL: '...'`.
+3. La app web de este proyecto ya incluye la URL esperada para la base predeterminada
+   `pokgames-d05a0-default-rtdb` en Bélgica. Si Firebase muestra un nombre o URL distinto,
+   actualiza `databaseURL` en `firebase-config.js` para que coincida.
 
 Más rápido, con la herramienta de Firebase (sube las reglas de las dos bases
 de datos y los índices del ranking de una vez):

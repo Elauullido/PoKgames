@@ -298,16 +298,26 @@ G.Social = (() => {
   function rtOn() { if (fb.rtdb) fb.rtdb.goOnline(); }
   function rtOff() { if (fb && fb.rtdb && !room) fb.rtdb.goOffline(); }
 
+  function roomSetupError(e) {
+    if (!fb || !fb.rtdb) return 'Falta conectar Realtime Database. Créala en Firebase y añade su URL a firebase-config.js.';
+    const code = e && (e.code || e.message) || 'error';
+    return 'No se pudo conectar con las salas (' + code + '). Revisa la URL y publica database.rules.json en Realtime Database.';
+  }
+
   async function createRoom() {
     if (room) return room;
+    if (!fb || !fb.rtdb) throw new Error(roomSetupError());
     rtOn();
-    const id = fb.rtdb.ref('rooms').push().key;
-    await fb.rtdb.ref('rooms/' + id).set({ host: uid, open: true, at: ts(), m: { [uid]: memberInfo() } });
-    enterRoom(id, uid);
-    return room;
+    try {
+      const id = fb.rtdb.ref('rooms').push().key;
+      await fb.rtdb.ref('rooms/' + id).set({ host: uid, open: true, at: ts(), m: { [uid]: memberInfo() } });
+      enterRoom(id, uid);
+      return room;
+    } catch (e) { rtOff(); throw e; }
   }
 
   async function joinRoom(id) {
+    if (!fb || !fb.rtdb) return { ok: false, error: roomSetupError() };
     if (room && room.id === id) return { ok: true };
     if (room) await leaveRoom();
     rtOn();
@@ -315,7 +325,7 @@ G.Social = (() => {
     try {
       open = (await fb.rtdb.ref('rooms/' + id + '/open').get()).val();
       host = (await fb.rtdb.ref('rooms/' + id + '/host').get()).val();
-    } catch (e) { /* sala borrada */ }
+    } catch (e) { rtOff(); return { ok: false, error: roomSetupError(e) }; }
     if (!host) { rtOff(); return { ok: false, error: 'Esa sala ya no existe.' }; }
     if (open !== true) { rtOff(); return { ok: false, error: 'La partida de esa sala ya ha empezado.' }; }
     try { await fb.rtdb.ref('rooms/' + id + '/m/' + uid).set(memberInfo()); }
@@ -496,7 +506,11 @@ G.Social = (() => {
     if (!f || f.status !== 'ok') return { ok: false, error: 'Sólo puedes invitar a tus amigos.' };
     if (room && room.members.length >= MAX_PLAYERS) return { ok: false, error: 'La sala está llena.' };
     if (room && !room.isHost) return { ok: false, error: 'Sólo el anfitrión de la sala puede invitar.' };
-    if (!room) await createRoom();
+    if (!fb || !fb.rtdb) return { ok: false, error: roomSetupError() };
+    if (!room) {
+      try { await createRoom(); }
+      catch (e) { return { ok: false, error: roomSetupError(e) }; }
+    }
     try {
       await fb.fs.collection('inv').doc(other + '_' + uid).set({ to: other, from: uid, room: room.id, name: me.name, at: fts() });
     } catch (e) { return { ok: false, error: 'No se pudo invitar (' + (e.code || 'error') + ').' }; }

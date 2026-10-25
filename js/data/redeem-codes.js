@@ -15,7 +15,7 @@ G.REDEEM_CODES = {
     { id: 'welcome-2026', code: 'POK-START-2026', rewards: { coins: 1500, ticket1: 5, ticket10: 1, items: { mint: 2 } } },
     { id: 'One', code: 'HALLOWEEN-2026', rewards: { coins: 2000, ticket1: 10, ticket10: 1, items: { mint: 2 } } },
     { id: '----', code: '´----', rewards: {  } },
-    { id: 'POKEMON778-2026', code: 'POKEMON778', rewards: { pokemon: Mimikyu } },
+    { id: '12345', code: 'EPIC', rewards: { ticket10: 500 } },
     { id: 'admin-god', code: 'ELAU-ADMIN-7XQ4-92LM', admin: true }
   ]
 };

@@ -1,4 +1,6 @@
-<!doctype html>
+from pathlib import Path
+
+html = r'''<!doctype html>
 <!-- dev.html: página fuente. Aquí se edita; index.html lo genera tools/build.js. -->
 <html lang="es">
 <head>
@@ -34,7 +36,6 @@
 <meta name="ps-pages" content="1">
 <!-- seo:end -->
 <link rel="manifest" href="manifest.webmanifest">
-<!-- Google sólo enseña en los resultados iconos de 48 px o múltiplos -->
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="48x48" href="assets/icons/icon-48.png">
 <link rel="icon" type="image/png" sizes="96x96" href="assets/icons/icon-96.png">
@@ -48,7 +49,6 @@
 <link rel="preload" href="assets/fonts/PixelifyPS-400.ttf" as="font" type="font/ttf" crossorigin>
 <link rel="preload" href="assets/fonts/PixelifyPS-700.ttf" as="font" type="font/ttf" crossorigin>
 <!-- seo:begin -->
-<!-- Datos estructurados para Google (tipo de página: videojuego gratuito) -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -89,7 +89,6 @@
 <body>
 
 <canvas id="game"></canvas>
-<!-- En móvil se juega en horizontal -->
 <div id="rotate" class="hidden"><div class="box center"><div id="rotate-ico"></div><h2>Gira el móvil</h2><p class="sub">PokéSurvivor se juega en horizontal.</p></div></div>
 
 <!-- ====== Inicio: login / registro / invitado ====== -->
@@ -194,6 +193,8 @@
         <button class="menu-item" data-go="codes">Códigos<small>Canjea recompensas especiales</small></button>
         <button class="menu-item" data-go="goals">Misiones<small id="menu-goals-sub">Misiones, logros y perfil</small></button>
         <button class="menu-item" data-go="friends">Amigos<small id="menu-friends-sub">Juega en grupo, hasta 4</small></button>
+        <!-- NUEVO: botón para abrir la pantalla de intercambios -->
+        <button class="menu-item" data-go="trade">Intercambiar<small>Coins y Pokémon con amigos</small></button>
         <button class="menu-item" data-go="rank">Ranking<small>Quién aguanta más</small></button>
         <button class="menu-item" data-go="settings">Ajustes<small>Sonido, gráficos, controles y cuenta</small></button>
       </div>
@@ -204,7 +205,7 @@
   </div>
 </section>
 
-<!-- ====== Códigos de recompensas (catálogo editable en js/data/redeem-codes.js) ====== -->
+<!-- ====== Códigos de recompensas ====== -->
 <section id="scr-codes" class="scr dim hidden">
   <div class="box" style="width:min(460px,100%)">
     <div class="row between"><h2>Códigos</h2><button class="btn small ghost" data-back>Volver</button></div>
@@ -238,7 +239,7 @@
 <div id="sound-panel" class="box sound-panel hidden"></div>
 <div id="credits-line" class="credits-line hidden">Proyecto de fan sin ánimo de lucro · Sprites: SpriteCollab (CC BY-NC 4.0) · Pokémon © Nintendo/Creatures/GAME FREAK · <a href="#" class="legal-link" data-legal>Aviso legal</a></div>
 
-<!-- ====== Novedades (cambios del juego) ====== -->
+<!-- ====== Novedades ====== -->
 <section id="scr-news" class="scr dim hidden">
   <div class="box news-box">
     <div class="row between"><h2>Novedades</h2><button class="btn small ghost" id="news-close">Cerrar</button></div>
@@ -246,7 +247,7 @@
   </div>
 </section>
 
-<!-- ====== Vincular Gmail para recuperar la cuenta (js/ui/login.js, offerRecovery) ====== -->
+<!-- ====== Vincular Gmail para recuperar la cuenta ====== -->
 <section id="scr-recover" class="scr dim hidden">
   <div class="box" style="width:min(440px,100%)">
     <h2>¿Te da miedo perder tu cuenta?</h2>
@@ -260,7 +261,7 @@
   </div>
 </section>
 
-<!-- ====== Avisos de una actualización (una vez por navegador, ver LoginUI.updateNotices) ====== -->
+<!-- ====== Avisos de una actualización ====== -->
 <section id="scr-savenote" class="scr dim hidden">
   <div class="box" style="width:min(460px,100%)" translate="no">
     <h2 id="savenote-title"></h2>
@@ -269,7 +270,7 @@
   </div>
 </section>
 
-<!-- ====== Apoyar el proyecto (donaciones) ====== -->
+<!-- ====== Apoyar el proyecto ====== -->
 <section id="scr-support" class="scr dim hidden">
   <div class="box support">
     <div class="row between"><h2>Apoyar el proyecto</h2><button class="btn small ghost" id="sup-close">Cerrar</button></div>
@@ -393,6 +394,19 @@
   </div>
 </section>
 
+<!-- ====== Intercambios: monedas y Pokémon ====== -->
+<section id="scr-trade" class="scr dim hidden">
+  <div class="box wide">
+    <div class="row between">
+      <h2>Intercambiar</h2>
+      <button class="btn small ghost" data-back>Volver</button>
+    </div>
+    <p class="sub">Prepara una oferta para intercambiar Coins o Pokémon con un amigo.</p>
+    <p class="note">Esta pantalla es la base de la función. Los intercambios reales necesitan validación segura en el servidor para evitar duplicados o pérdidas.</p>
+    <div id="trade-ui-root"></div>
+  </div>
+</section>
+
 <!-- ====== Sala (partida en grupo) ====== -->
 <section id="scr-lobby" class="scr dim hidden">
   <div class="box wide">
@@ -428,7 +442,7 @@
   </div>
 </section>
 
-<!-- ====== Moderación del ranking (sólo la cuenta de admin, ver js/ui/mod-ui.js) ====== -->
+<!-- ====== Moderación del ranking ====== -->
 <section id="scr-mod" class="scr dim hidden">
   <div class="box wide">
     <div class="row between"><h2>Moderación</h2><span class="row" style="gap:6px"><button class="btn small danger" id="mod-purge">Quitar marcas de más de 1 hora</button><button class="btn small ghost" id="mod-back">Volver</button></span></div>
@@ -492,13 +506,10 @@
   </div>
 </section>
 
-<!-- ====== Tienda Kecleon (20-10-2026, del PR #236 de TheAdro7) ====== -->
+<!-- ====== Tienda Kecleon ====== -->
 <section id="scr-shop" class="scr dim hidden">
   <div class="box wide shop-box">
-    <!-- El puesto: cae, se despliega el toldo, sube la persiana y salen los dos Kecleon (ver shop-ui.js). -->
     <div class="shop-stall" id="shop-stall">
-      <!-- Todo el puesto (paisaje, toldo, estanterías, persiana, farolillos y los dos
-           Kecleon) se dibuja en pixel art en este lienzo: ver Scene en shop-ui.js. -->
       <canvas id="shop-scene" class="shop-scene"></canvas>
       <div class="shop-sign" id="shop-sign"><span>Tienda Kecleon</span></div>
       <div class="shop-bubble hide" id="shop-bubble"></div>
@@ -514,7 +525,7 @@
   </div>
 </section>
 
-<!-- ====== Mochila (desde el menú principal, sin entrar en la tienda) ====== -->
+<!-- ====== Mochila ====== -->
 <section id="scr-bag" class="scr dim hidden">
   <div class="box wide">
     <div class="row between"><h2>Mochila</h2><button class="btn small ghost" data-back>Volver</button></div>
@@ -639,6 +650,8 @@
 <!-- núcleo -->
 <script defer src="js/core/firebase-config.js"></script>
 <script defer src="js/core/db.js"></script>
+<!-- NUEVO: lógica de ofertas de intercambio; debe cargar después de db.js -->
+<script defer src="js/core/trade.js"></script>
 <script defer src="js/core/audio.js"></script>
 <script defer src="js/core/input.js"></script>
 <script defer src="js/core/touch.js"></script>
@@ -701,6 +714,8 @@
 <script defer src="js/ui/login.js"></script>
 <script defer src="js/ui/test.js"></script>
 <script defer src="js/ui/menu.js"></script>
+<!-- NUEVO: interfaz de intercambios; menu.js debe cargar antes -->
+<script defer src="js/ui/trade-ui.js"></script>
 <script defer src="js/ui/codes-ui.js"></script>
 <script defer src="js/ui/slots.js"></script>
 <script defer src="js/ui/gacha-ui.js"></script>
@@ -719,6 +734,9 @@
 <!-- juego -->
 <script defer src="js/game.js"></script>
 <script defer src="js/main.js"></script>
-<!-- scripts:end -->
 </body>
 </html>
+'''
+path = Path("/mnt/data/dev.html")
+path.write_text(html, encoding="utf-8")
+print(f"Creado: {path} ({len(html):,} caracteres)")

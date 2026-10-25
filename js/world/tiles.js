@@ -10,6 +10,14 @@ G.Tiles = (() => {
   const T = 16;                       // píxeles de arte por tile
 
   const BIOMES = [
+    { name: 'Bosque de Halloween', liquid: 'water', seasonal: true,
+      floor: ['#9a562d', '#ad6332', '#874526'], dirt: ['#62402c', '#71472d', '#583723'],
+      speck: '#65381f', light: '#e7953d', flowers: ['#f3a333', '#d7512e', '#8b58a6'],
+      wallTop: ['#61442f', '#755037', '#573b2b'], wallLight: '#a87545', wallEdge: '#38261d',
+      wallFace: ['#503728', '#63432c'], wallFaceDark: '#302219',
+      liq: '#526348', liqDeep: '#384b35', foam: '#a0a96b', shore: '#583a25',
+      prop: 'tree', leaf: ['#c65322', '#e07724', '#f0a331', '#8c3e2d'], trunk: ['#4d3022', '#68432a'],
+      rock: ['#594638', '#806043', '#a1784b'], grass: ['#a85a27', '#d47b2b', '#eda53e'] },
     { name: 'Bosque Umbrío', liquid: 'water',
       floor: ['#3e7a39', '#44813d', '#397134'], dirt: ['#7d6742', '#735e3b', '#86704a'],
       speck: '#2f5f2b', light: '#5f9d50', flowers: ['#f4d65c', '#f39ac0', '#eef2ff'],
@@ -34,14 +42,6 @@ G.Tiles = (() => {
       liq: '#e45a1f', liqDeep: '#b9401a', foam: '#ffd46a', shore: '#3a2a22',
       prop: 'dead', leaf: ['#4a3a30', '#5e4a3c', '#6f5a49', '#806a58'], trunk: ['#3a2e27', '#52423a'],
       rock: ['#4e4642', '#6a605b', '#877c76'], grass: ['#6b4a2a', '#94693a', '#c4914e'] },
-    { name: 'Bosque de Halloween', liquid: 'water', seasonal: true,
-      floor: ['#9a562d', '#ad6332', '#874526'], dirt: ['#62402c', '#71472d', '#583723'],
-      speck: '#65381f', light: '#e7953d', flowers: ['#f3a333', '#d7512e', '#8b58a6'],
-      wallTop: ['#61442f', '#755037', '#573b2b'], wallLight: '#a87545', wallEdge: '#38261d',
-      wallFace: ['#503728', '#63432c'], wallFaceDark: '#302219',
-      liq: '#526348', liqDeep: '#384b35', foam: '#a0a96b', shore: '#583a25',
-      prop: 'tree', leaf: ['#c65322', '#e07724', '#f0a331', '#8c3e2d'], trunk: ['#4d3022', '#68432a'],
-      rock: ['#594638', '#806043', '#a1784b'], grass: ['#a85a27', '#d47b2b', '#eda53e'] },
   ];
   const NORMAL = 4;                   // biomas que se van turnando en una run
   const ARENA = 4;                    // a partir de aquí, las arenas de la grieta (una por tipo)

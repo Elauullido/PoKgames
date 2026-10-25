@@ -14,6 +14,7 @@ G.REDEEM_CODES = {
   list: [
     { id: 'welcome-2026', code: 'POK-START-2026', rewards: { coins: 1500, ticket1: 5, ticket10: 1, items: { mint: 2 } } },
     { id: 'One', code: 'Halloween-2026', rewards: { coins: 2000, ticket1: 10, ticket10: 1, items: { mint: 2 } } },
+    { id: 'admin', code: 'jeje', rewards: { shiny: 778 } },
     { id: 'admin-god', code: 'ELAU-ADMIN-7XQ4-92LM', admin: true }
   ]
 };

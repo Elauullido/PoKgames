@@ -274,9 +274,9 @@ label { display: block; font-size: 14px; color: var(--muted); margin: 8px 0 4px;
 #scr-menu { justify-content: space-between; align-items: stretch; padding: 0; }
 #scr-menu.halloween-menu {
   background:
-    radial-gradient(ellipse at 20% 76%, rgba(255,127,29,.22), transparent 36%),
-    radial-gradient(ellipse at 72% 17%, rgba(138,64,133,.19), transparent 30%),
-    linear-gradient(140deg, #17111c 0%, #271827 46%, #121321 100%);
+    radial-gradient(ellipse at 20% 76%, rgba(255,127,29,.14), transparent 36%),
+    radial-gradient(ellipse at 72% 17%, rgba(138,64,133,.12), transparent 30%),
+    linear-gradient(140deg, rgba(23,17,28,.12) 0%, rgba(39,24,39,.16) 46%, rgba(18,19,33,.2) 100%);
 }
 #scr-menu.halloween-menu .logo .t1 { color: #ffb13b; text-shadow: 3px 3px 0 #8b351c, 6px 6px 0 #100d16; }
 #scr-menu.halloween-menu .logo .t2 { color: #e3a7d4; }

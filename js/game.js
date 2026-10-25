@@ -876,14 +876,14 @@ G.Game = (() => {
    * Así el menú enseña desde el primer segundo cómo se ve el juego.
    */
   const Backdrop = (() => {
-    let wanderers = [], t = 0, ready = false, biomeT = 0, bi = 0;
-    const CAST = [1, 4, 7, 25, 133, 52, 39, 35, 16, 43, 60, 69, 74, 92, 129, 147, 113, 143, 54, 79];
+    let wanderers = [], t = 0, ready = false, biomeT = 0, bi = 3;
+    const CAST = [710, 711, 778, 92, 93, 200, 353, 354, 355, 356, 425, 426, 429, 442, 477, 478, 592, 593, 607, 609];
 
     function init() {
       G.World.reset(4242);
-      G.World.setBiome(0, true);
+      G.World.setBiome(bi, true);
       G.Camera.x = 0; G.Camera.y = 0;
-      wanderers = CAST.map(dex => spawn(dex, true));
+      wanderers = CAST.filter(dex => G.SPRITE_META[dex]).map(dex => spawn(dex, true));
       ready = true;
     }
 
@@ -956,7 +956,7 @@ G.Game = (() => {
       G.World.reset(4242);
       G.World.setBiome(bi, true);
       G.FX.clear(); G.Projectiles.clear(); G.Combat.clearFields(); G.EnemyMgr.clear(); G.Pickups.clear();
-      wanderers = CAST.map(dex => spawn(dex, true));
+      wanderers = CAST.filter(dex => G.SPRITE_META[dex]).map(dex => spawn(dex, true));
     }
 
     return { init, render, restore };

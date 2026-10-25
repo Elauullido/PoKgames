@@ -7,8 +7,8 @@
  */
 G.CHANGELOG = [
   { d: '2026-10-25', title: ['Grietas: Laberinto Glitcheado y Puerta Abismal', 'Rifts: Glitched Labyrinth and Abyssal Door'], new: [
-    ['El menú principal ahora tiene un ambiente especial de Halloween.',
-     'The main menu now has a special Halloween look.'],
+    ['El menú inicial muestra el Bosque de Halloween como una escena viva: Pokémon deambulan por el fondo mientras estás en el menú.',
+     'The opening menu now shows the Halloween Forest as a living scene, with Pokémon wandering in the background.'],
     ['Nuevo Bosque de Halloween: un bioma otoñal naranja con árboles de colores, calabazas, cofres temáticos y Pokémon fantasma y de terror.',
      'New Halloween Forest: an orange autumn biome with colorful trees, pumpkins, themed chests, and spooky Ghost-type Pokémon.'],
     ['Nueva Puerta Abismal: entra en una tumba enorme, sobrevive a oleadas de momias y Pokémon de Halloween y derrota al Faraón Cofagrigus.',
